@@ -1,9 +1,12 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card, PageHeader } from "@/components/ui/Card";
+import { InitialsBadge } from "@/components/ui/InitialsBadge";
+import { handleOf, initialsOf } from "@/lib/names";
 import { InfoButton } from "@/components/ui/InfoButton";
 import { formatValue } from "@/lib/log";
 import { NUTRIENT_GROUPS, NUTRIENTS } from "@/lib/nutrients";
@@ -103,17 +106,21 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
   const diet = dietOf(profile);
   const lifeStage = LIFE_STAGE_OPTIONS.find((option) => option.value === diet.lifeStage)!;
   const kcal = Math.round(maintenanceCalories(profile, today) / 10) * 10;
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress;
 
   return (
     <section aria-labelledby="details-title" className="flex flex-col gap-4 rounded-card border-[1.5px] border-band bg-celery p-5 shadow-[3px_4px_0_rgb(46_107_63_/_0.18)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="grid size-11 place-items-center rounded-full bg-lemon font-display text-xl font-extrabold shadow-[0_2px_0_rgb(31_42_28_/_0.15)]">
-            ✿
-          </span>
-          <h2 id="details-title" className="font-display text-xl font-extrabold">
-            Your details
-          </h2>
+        <div className="flex min-w-0 items-center gap-3">
+          {/* The same badge as the header's account button, with the name from Clerk. */}
+          <InitialsBadge initials={initialsOf(user?.firstName, user?.lastName, email)} photo={user?.hasImage ? user.imageUrl : null} size="large" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Your details</p>
+            <h2 id="details-title" className="truncate font-display text-xl font-extrabold">
+              {user?.fullName || handleOf(email) || "Your details"}
+            </h2>
+          </div>
         </div>
         <ButtonLink href="/setup" variant="secondary" className="bg-paper">
           Edit details

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
@@ -18,12 +19,14 @@ import {
   type Profile,
 } from "@/lib/profile";
 import { EMPTY_SETUP, birthInputFrom, formatBirthInput, switchUnits, validateSetup, valuesFromProfile, type SetupField, type SetupValues } from "@/lib/setup";
+import { NAME_MAX, cleanName, validateName } from "@/lib/names";
 import { updateData, useSavedData } from "@/lib/storage";
 import { useToday } from "@/lib/useToday";
 
 export function SetupScreen() {
   const data = useSavedData();
   const today = useToday();
+  const { isLoaded } = useUser();
   const editing = Boolean(data?.profile);
 
   return (
@@ -35,11 +38,11 @@ export function SetupScreen() {
         description={
           editing
             ? "Change anything and save. Your ranges update to match."
-            : "Six quick questions, plus optional diet notes. We use them only to estimate your daily ranges and tailor suggestions, and only your account can see them."
+            : "Your name and six quick questions, plus optional diet notes. We use them only to estimate your daily ranges and tailor suggestions, and only your account can see them."
         }
       />
-      {/* The form waits for saved data so editing starts prefilled. */}
-      {data && today && <SetupForm key={editing ? "edit" : "new"} saved={data.profile} today={today} />}
+      {/* The form waits for saved data and the Clerk user, so it starts prefilled. */}
+      {data && today && isLoaded && <SetupForm key={editing ? "edit" : "new"} saved={data.profile} today={today} />}
     </>
   );
 }
@@ -150,23 +153,51 @@ function BirthDateField({
 
 export function SetupForm({ saved, today }: { saved: Profile | null; today: string }) {
   const router = useRouter();
+  // The name lives in the Clerk account (it drives the header badge), so it's
+  // read from and saved to Clerk, not the profiles table.
+  const { user } = useUser();
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [nameSaveError, setNameSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [values, setValues] = useState<SetupValues>(saved ? valuesFromProfile(saved) : EMPTY_SETUP);
   // Errors show after the first submit, then update as the person fixes them.
   const [submitted, setSubmitted] = useState(false);
   const { errors } = validateSetup(values, today);
   const shown = submitted ? errors : {};
+  const nameErrors = submitted ? validateName(firstName, lastName) : {};
 
   const set = (patch: Partial<SetupValues>) => setValues((current) => ({ ...current, ...patch }));
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitted(true);
+    setNameSaveError("");
+    const names = validateName(firstName, lastName);
     const result = validateSetup(values, today);
+    if (names.firstName || names.lastName) {
+      document.getElementById(names.firstName ? "setup-first-name" : "setup-last-name")?.focus();
+      return;
+    }
     if (!result.profile) {
       const order: SetupField[] = ["height", "weight", "birthDate", "sex", "activity"];
       const first = order.find((field) => result.errors[field])!;
       document.getElementById(firstErrorTarget(first, values))?.focus();
       return;
+    }
+    const first = cleanName(firstName);
+    const last = cleanName(lastName);
+    if (user && (first !== user.firstName || last !== user.lastName)) {
+      setSaving(true);
+      try {
+        await user.update({ firstName: first, lastName: last });
+      } catch {
+        // Keep everything typed, and say what to do.
+        setSaving(false);
+        setNameSaveError("Couldn’t save your name. Check your connection, then save again.");
+        document.getElementById("setup-first-name")?.focus();
+        return;
+      }
     }
     const profile = result.profile;
     updateData((data) => ({ ...data, profile }));
@@ -177,6 +208,25 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
 
   return (
     <form noValidate onSubmit={handleSubmit} className="flex max-w-md flex-col gap-6">
+      <TextField
+        id="setup-first-name"
+        label="First name"
+        autoComplete="given-name"
+        maxLength={NAME_MAX}
+        value={firstName}
+        onChange={(event) => setFirstName(event.target.value)}
+        error={nameErrors.firstName ?? (nameSaveError || undefined)}
+      />
+      <TextField
+        id="setup-last-name"
+        label="Last name"
+        autoComplete="family-name"
+        maxLength={NAME_MAX}
+        value={lastName}
+        onChange={(event) => setLastName(event.target.value)}
+        error={nameErrors.lastName}
+      />
+
       <ChoiceField
         name="units"
         legend="Units"
@@ -295,8 +345,8 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
         )}
       </fieldset>
 
-      <Button type="submit" className="min-h-12 self-start px-7 text-[17px]">
-        {saved ? "Save and update my ranges" : "See my ranges"}
+      <Button type="submit" disabled={saving} className="min-h-12 self-start px-7 text-[17px]">
+        {saving ? "Saving…" : saved ? "Save and update my ranges" : "See my ranges"}
       </Button>
     </form>
   );

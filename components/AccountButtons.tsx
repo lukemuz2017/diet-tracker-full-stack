@@ -4,6 +4,8 @@ import { Show, useClerk, useUser } from "@clerk/nextjs";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
+import { InitialsBadge } from "@/components/ui/InitialsBadge";
+import { handleOf, initialsOf } from "@/lib/names";
 
 // Header account controls: Sign in and Sign up when signed out, an account
 // button when signed in. The sign-in and sign-up pages already link to each
@@ -29,23 +31,6 @@ export function AccountButtons() {
       </Show>
     </>
   );
-}
-
-/** The part of an email before the @, e.g. "muzikowski". */
-function handleOf(email: string | undefined): string {
-  return email?.split("@")[0] ?? "";
-}
-
-/**
- * Two letters for the badge: "Luke Muzikowski" → "LM"; with no name, from
- * the email ("luke.muz@…" → "LM", "muzikowski@…" → "MU").
- */
-export function initialsOf(first: string | null | undefined, last: string | null | undefined, email: string | undefined): string {
-  const name = [first, last].map((part) => part?.trim()[0] ?? "").join("");
-  if (name.length === 2) return name.toUpperCase();
-  const words = handleOf(email).split(/[^a-zA-Z]+/).filter(Boolean);
-  const fromEmail = words.length >= 2 ? words[0][0] + words[1][0] : (words[0] ?? "").slice(0, 2);
-  return (name || fromEmail || "?").toUpperCase();
 }
 
 // Our own button instead of Clerk's UserButton, whose default picture is a
@@ -103,18 +88,7 @@ function AccountMenu() {
           open ? "bg-track" : ""
         }`}
       >
-        {photo ? (
-          // A photo the person chose; plain <img> since it's a tiny remote avatar.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" className="size-8 rounded-full object-cover" />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="grid size-8 place-items-center rounded-full bg-lemon font-display text-[13px] font-extrabold tracking-wide text-soil shadow-[inset_0_0_0_2px_var(--color-lemon),inset_0_0_0_3.5px_var(--color-soil)]"
-          >
-            {initials}
-          </span>
-        )}
+        <InitialsBadge initials={initials} photo={photo} />
         <span aria-hidden="true" className="max-w-[7rem] truncate text-sm font-bold text-soil sm:max-w-[9rem]">
           {shortName}
         </span>
