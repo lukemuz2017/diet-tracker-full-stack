@@ -24,12 +24,15 @@ export function AmountSelect({
   label,
   spec,
   quantity,
+  size = "regular",
   onChange,
 }: {
   id: string;
   label: string;
   spec: AmountSpec;
   quantity: number;
+  /** "small" for editing a food already logged, so the row stays compact. */
+  size?: "regular" | "small";
   onChange: (quantity: number) => void;
 }) {
   return (
@@ -41,7 +44,7 @@ export function AmountSelect({
         id={id}
         value={quantity}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-11 rounded-field border-[1.5px] border-field bg-white px-2 text-[15px]"
+        className={`rounded-field border-[1.5px] border-field bg-white ${size === "small" ? "h-9 px-1.5 text-sm" : "h-11 px-2 text-[15px]"}`}
       >
         {spec.named?.length ? (
           <>

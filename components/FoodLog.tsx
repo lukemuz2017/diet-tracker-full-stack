@@ -13,7 +13,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { CheckIcon, PlusIcon } from "@/components/ui/icons";
 import { changeServings, removeEntry, setDayComplete } from "@/lib/actions";
-import { multipleFor, quantityFor } from "@/lib/amounts";
+import { formatAmount, multipleFor, quantityFor } from "@/lib/amounts";
 import { addDays, formatDay, formatShortDay, weekdayName } from "@/lib/dates";
 import { amountFor } from "@/lib/foods";
 import { dayHighlights } from "@/lib/highlights";
@@ -467,40 +467,82 @@ function MealPicker({ value, onChange }: { value: Meal; onChange: (meal: Meal) =
   );
 }
 
-/** Removes a food and puts focus on the next one, or the meal's "+ Add" if it was the last. */
+/** Removes a food and puts focus on the next one's Edit, or the meal's "+ Add" if it was the last. */
 function removeAndRefocus(event: MouseEvent<HTMLButtonElement>, id: string) {
   const row = event.currentTarget.closest("li");
   const meal = row?.closest("section");
-  const sibling = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLButtonElement>('button[aria-label^="Remove"]');
+  const sibling = (row?.nextElementSibling ?? row?.previousElementSibling)?.querySelector<HTMLButtonElement>('button[aria-label^="Edit"]');
   removeEntry(id);
   requestAnimationFrame(() => (sibling ?? meal?.querySelector<HTMLButtonElement>('button[aria-label^="Add food to"]'))?.focus());
 }
 
+// Logged foods read as plain text ("5 slices · 1,585 kcal") with an Edit
+// button; Edit opens that one food's amount menu and Remove, and Done (or
+// Escape) closes it again. One food is edited at a time.
 function FoodList({ entries }: { entries: Entry[] }) {
+  const [editing, setEditing] = useState<string | null>(null);
+
+  function finish(id: string) {
+    setEditing(null);
+    requestAnimationFrame(() => document.getElementById(`edit-${id}`)?.focus());
+  }
+
   return (
     <ul className="divide-y divide-line">
       {entries.map((entry) => {
         const spec = amountFor(entry.foodId);
+        const quantity = quantityFor(spec, entry.servings);
+        const open = editing === entry.id;
         return (
-          <li key={entry.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-2.5">
+          <li
+            key={entry.id}
+            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2.5"
+            onKeyDown={(event) => {
+              if (open && event.key === "Escape") {
+                // Close the edit, not the side panel around it.
+                event.stopPropagation();
+                event.preventDefault();
+                finish(entry.id);
+              }
+            }}
+          >
             <span className="min-w-0">
               <b className="block leading-snug">{entry.name}</b>
-              {entry.nutrients.calories !== undefined && (
-                <span className="block text-sm text-muted">{formatValue(entry.nutrients.calories)} kcal</span>
-              )}
+              <span className="block text-sm text-muted">
+                {formatAmount(spec, quantity)}
+                {entry.nutrients.calories !== undefined && ` · ${formatValue(entry.nutrients.calories)} kcal`}
+              </span>
             </span>
-            <span className="flex items-center gap-2">
-              <AmountSelect
-                id={`amount-${entry.id}`}
-                label={`Amount of ${entry.name}`}
-                spec={spec}
-                quantity={quantityFor(spec, entry.servings)}
-                onChange={(quantity) => changeServings(entry.id, multipleFor(spec, quantity))}
-              />
-              <Button variant="quiet" onClick={(event) => removeAndRefocus(event, entry.id)} aria-label={`Remove ${entry.name}`}>
-                Remove
+            {open ? (
+              <span className="flex items-center gap-1.5">
+                <AmountSelect
+                  id={`amount-${entry.id}`}
+                  label={`Amount of ${entry.name}`}
+                  spec={spec}
+                  quantity={quantity}
+                  size="small"
+                  onChange={(value) => changeServings(entry.id, multipleFor(spec, value))}
+                />
+                <Button variant="quiet" onClick={(event) => removeAndRefocus(event, entry.id)} aria-label={`Remove ${entry.name}`}>
+                  Remove
+                </Button>
+                <Button variant="quiet" onClick={() => finish(entry.id)} aria-label={`Done editing ${entry.name}`}>
+                  Done
+                </Button>
+              </span>
+            ) : (
+              <Button
+                id={`edit-${entry.id}`}
+                variant="quiet"
+                aria-label={`Edit ${entry.name}`}
+                onClick={() => {
+                  setEditing(entry.id);
+                  requestAnimationFrame(() => document.getElementById(`amount-${entry.id}`)?.focus());
+                }}
+              >
+                Edit
               </Button>
-            </span>
+            )}
           </li>
         );
       })}
