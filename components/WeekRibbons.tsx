@@ -31,6 +31,15 @@ const PINNED = "sm:sticky sm:left-0 sm:z-[1] self-stretch bg-paper";
 // far to go are in the nutrient's detail.
 const SUMMARY: Record<string, string> = { "to-go": "Under", "in-range": "In range", over: "Over" };
 
+// The grid's two halves (lib/nutrients.ts groups): nutrients with a range to
+// stay inside, then ones to get at least enough of, where "in range" reads
+// "Enough" (going over a minimum is never a problem, short of an upper limit).
+const SECTION_TITLE: Record<string, string> = { "Energy and macros": "Keep in range", "Get enough of": "Get enough of" };
+
+function summaryLabel(kind: string, targetKind: string): string {
+  return kind === "in-range" && targetKind === "min" ? "Enough" : SUMMARY[kind];
+}
+
 /**
  * Week ribbons: one row per nutrient, a cell per day (in range / under / over
  * / not logged; brown-bag kraft when logged but not marked complete) and the
@@ -140,7 +149,12 @@ export function WeekRibbons({
             </span>
           </div>
 
-          {NUTRIENT_GROUPS.flatMap((group) => group.keys).map((key) => {
+          {NUTRIENT_GROUPS.map((group) => (
+            <Fragment key={group.title}>
+              <h2 className="sticky left-0 w-max border-line pb-1 pt-3 text-xs font-bold uppercase tracking-[0.08em] text-leaf">
+                {SECTION_TITLE[group.title] ?? group.title}
+              </h2>
+              {group.keys.map((key) => {
             const { label, unit } = NUTRIENTS[key];
             const average = summary.averages[key];
             const status = statusFor(key, targets[key], summary.counted > 0 ? average : undefined);
@@ -191,7 +205,7 @@ export function WeekRibbons({
                         aria-label={`${label} average: ${status.text}. ${open ? "Hide" : "Show"} details`}
                         className="whitespace-nowrap rounded-full"
                       >
-                        <StatusChip status={status.kind}>{SUMMARY[status.kind]}</StatusChip>
+                        <StatusChip status={status.kind}>{summaryLabel(status.kind, targets[key].kind)}</StatusChip>
                       </button>
                     ) : (
                       <span className="text-sm text-muted">–</span>
@@ -206,12 +220,14 @@ export function WeekRibbons({
                 )}
               </Fragment>
             );
-          })}
+              })}
+            </Fragment>
+          ))}
         </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range that day</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range or enough that day</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-lemon align-[-2px]" />Under</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-carrot align-[-2px]" />Over</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm border-[1.5px] border-dashed border-field align-[-2px]" />Not logged</span>

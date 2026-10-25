@@ -39,7 +39,7 @@ test("statuses say where a value stands, and going over a minimum is fine", () =
   assert.deepEqual(statusFor("protein", range, 62), { kind: "to-go", text: "28 g to go" });
   assert.deepEqual(statusFor("protein", range, 100), { kind: "in-range", text: "In range" });
   assert.deepEqual(statusFor("protein", range, 130), { kind: "over", text: "Over by 10 g" });
-  assert.deepEqual(statusFor("fiber", { kind: "min", min: 33 }, 50), { kind: "in-range", text: "In range" });
+  assert.deepEqual(statusFor("fiber", { kind: "min", min: 33 }, 50), { kind: "in-range", text: "Enough" });
   assert.deepEqual(statusFor("fat", { kind: "max", max: 80 }, 90), { kind: "over", text: "Over by 10 g" });
   assert.deepEqual(statusFor("fat", { kind: "max", max: 80 }, 60), { kind: "in-range", text: "Under limit" });
   assert.equal(statusFor("iron", { kind: "min", min: 8 }, undefined).kind, "unknown");
