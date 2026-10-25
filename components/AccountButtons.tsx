@@ -31,10 +31,21 @@ export function AccountButtons() {
   );
 }
 
-/** "Luke Muzikowski" → "LM"; an email alone → its first letter. */
-function initialsOf(first: string | null | undefined, last: string | null | undefined, email: string | undefined): string {
-  const fromName = [first, last].map((part) => part?.trim()[0] ?? "").join("");
-  return (fromName || email?.[0] || "?").toUpperCase();
+/** The part of an email before the @, e.g. "muzikowski". */
+function handleOf(email: string | undefined): string {
+  return email?.split("@")[0] ?? "";
+}
+
+/**
+ * Two letters for the badge: "Luke Muzikowski" → "LM"; with no name, from
+ * the email ("luke.muz@…" → "LM", "muzikowski@…" → "MU").
+ */
+export function initialsOf(first: string | null | undefined, last: string | null | undefined, email: string | undefined): string {
+  const name = [first, last].map((part) => part?.trim()[0] ?? "").join("");
+  if (name.length === 2) return name.toUpperCase();
+  const words = handleOf(email).split(/[^a-zA-Z]+/).filter(Boolean);
+  const fromEmail = words.length >= 2 ? words[0][0] + words[1][0] : (words[0] ?? "").slice(0, 2);
+  return (name || fromEmail || "?").toUpperCase();
 }
 
 // Our own button instead of Clerk's UserButton, whose default picture is a
@@ -73,6 +84,8 @@ function AccountMenu() {
   const email = user.primaryEmailAddress?.emailAddress;
   const name = user.fullName || email || "Your account";
   const initials = initialsOf(user.firstName, user.lastName, email);
+  // Shown beside the badge: first name if Clerk has one, else the email handle.
+  const shortName = user.firstName || handleOf(email) || "Account";
   const photo = user.hasImage ? user.imageUrl : null;
 
   const item = "flex min-h-11 w-full items-center rounded-lg px-3 text-left text-[15px] font-bold text-soil hover:bg-track";
@@ -86,20 +99,28 @@ function AccountMenu() {
         aria-controls={panelId}
         aria-label={`Account: ${name}`}
         onClick={() => setOpen((value) => !value)}
-        className="grid size-11 place-items-center rounded-full"
+        className={`inline-flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-soil bg-paper py-1 pl-1 pr-3 hover:bg-track ${
+          open ? "bg-track" : ""
+        }`}
       >
         {photo ? (
           // A photo the person chose; plain <img> since it's a tiny remote avatar.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="" className="size-9 rounded-full object-cover shadow-[0_0_0_2px_var(--color-paper),0_0_0_3.5px_var(--color-soil)]" />
+          <img src={photo} alt="" className="size-8 rounded-full object-cover" />
         ) : (
           <span
             aria-hidden="true"
-            className="grid size-9 place-items-center rounded-full bg-lemon font-display text-sm font-extrabold text-soil shadow-[inset_0_0_0_2.5px_var(--color-lemon),inset_0_0_0_4px_var(--color-soil)]"
+            className="grid size-8 place-items-center rounded-full bg-lemon font-display text-[13px] font-extrabold tracking-wide text-soil shadow-[inset_0_0_0_2px_var(--color-lemon),inset_0_0_0_3.5px_var(--color-soil)]"
           >
             {initials}
           </span>
         )}
+        <span aria-hidden="true" className="max-w-[7rem] truncate text-sm font-bold text-soil sm:max-w-[9rem]">
+          {shortName}
+        </span>
+        <span aria-hidden="true" className={`text-xs text-soil transition-transform ${open ? "rotate-180" : ""}`}>
+          ▾
+        </span>
       </button>
       <div
         id={panelId}
