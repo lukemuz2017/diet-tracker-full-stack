@@ -23,7 +23,7 @@ flowchart LR
     A(["Open app, nothing saved"]) --> B["Welcome · /<br/>what it's for · Get started"]
     B --> C["Your details · /setup<br/>height, weight, date of birth, sex, activity<br/>optional diet notes"]
     C -- "missing or out-of-range value:<br/>error by the field, input kept" --> C
-    C --> D["Your profile · /profile<br/>your ranges, ⓘ explains each<br/>Log your first food"]
+    C --> D["Profile · /profile<br/>your ranges, ⓘ explains each<br/>Log your first food"]
     D --> E["Add food pop-up · /log<br/>search or browse · pick foods · add"]
   end
 

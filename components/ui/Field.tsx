@@ -176,7 +176,7 @@ export function ChoiceField<T extends string>({
           {hint}
         </p>
       )}
-      <div className={stacked ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}>
+      <div className={stacked ? "grid gap-2 sm:grid-cols-2" : "flex flex-wrap gap-2"}>
         {options.map((option) => (
           <label
             key={option.value}

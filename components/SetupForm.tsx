@@ -29,6 +29,9 @@ export function SetupScreen() {
   const { isLoaded } = useUser();
   const editing = Boolean(data?.profile);
 
+  // Until the saved data loads, it isn't known whether this is setup or an edit.
+  if (!data) return null;
+
   return (
     <>
       <PageHeader
@@ -42,7 +45,7 @@ export function SetupScreen() {
         }
       />
       {/* The form waits for saved data and the Clerk user, so it starts prefilled. */}
-      {data && today && isLoaded && <SetupForm key={editing ? "edit" : "new"} saved={data.profile} today={today} />}
+      {today && isLoaded && <SetupForm key={editing ? "edit" : "new"} saved={data.profile} today={today} />}
     </>
   );
 }
@@ -151,6 +154,9 @@ function BirthDateField({
   );
 }
 
+/** Two related fields side by side from sm up; one column on phones. */
+const PAIR = "grid items-start gap-5 sm:grid-cols-2 sm:gap-4";
+
 export function SetupForm({ saved, today }: { saved: Profile | null; today: string }) {
   const router = useRouter();
   // The name lives in the Clerk account (it drives the header badge), so it's
@@ -207,25 +213,28 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
   const us = values.units === "us";
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex max-w-md flex-col gap-6">
-      <TextField
-        id="setup-first-name"
-        label="First name"
-        autoComplete="given-name"
-        maxLength={NAME_MAX}
-        value={firstName}
-        onChange={(event) => setFirstName(event.target.value)}
-        error={nameErrors.firstName ?? (nameSaveError || undefined)}
-      />
-      <TextField
-        id="setup-last-name"
-        label="Last name"
-        autoComplete="family-name"
-        maxLength={NAME_MAX}
-        value={lastName}
-        onChange={(event) => setLastName(event.target.value)}
-        error={nameErrors.lastName}
-      />
+    <form noValidate onSubmit={handleSubmit} className="flex max-w-3xl flex-col gap-5">
+      {/* Fields that belong together sit side by side from sm up (one column on phones). */}
+      <div className={PAIR}>
+        <TextField
+          id="setup-first-name"
+          label="First name"
+          autoComplete="given-name"
+          maxLength={NAME_MAX}
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          error={nameErrors.firstName ?? (nameSaveError || undefined)}
+        />
+        <TextField
+          id="setup-last-name"
+          label="Last name"
+          autoComplete="family-name"
+          maxLength={NAME_MAX}
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          error={nameErrors.lastName}
+        />
+      </div>
 
       <ChoiceField
         name="units"
@@ -238,73 +247,77 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
         onChange={(units) => setValues((current) => switchUnits(current, units))}
       />
 
-      {us ? (
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="pb-1.5 text-[15px] font-bold">Height</legend>
-          <div className="grid grid-cols-2 gap-3">
-            <TextField
-              id="setup-height-ft"
-              label="Feet"
-              unit={{ short: "ft", long: "feet" }}
-              inputMode="numeric"
-              autoComplete="off"
-              value={values.heightFt}
-              onChange={(event) => set({ heightFt: event.target.value })}
-              invalid={Boolean(shown.height)}
-              aria-describedby={shown.height ? "setup-height-error" : undefined}
-              className="[&_label]:sr-only"
-            />
-            <TextField
-              id="setup-height-in"
-              label="Inches"
-              unit={{ short: "in", long: "inches" }}
-              inputMode="numeric"
-              autoComplete="off"
-              value={values.heightIn}
-              onChange={(event) => set({ heightIn: event.target.value })}
-              invalid={Boolean(shown.height)}
-              aria-describedby={shown.height ? "setup-height-error" : undefined}
-              className="[&_label]:sr-only"
-            />
-          </div>
-          {shown.height && <FieldError id="setup-height-error">{shown.height}</FieldError>}
-        </fieldset>
-      ) : (
+      <div className={PAIR}>
+        {us ? (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="pb-1.5 text-[15px] font-bold">Height</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <TextField
+                id="setup-height-ft"
+                label="Feet"
+                unit={{ short: "ft", long: "feet" }}
+                inputMode="numeric"
+                autoComplete="off"
+                value={values.heightFt}
+                onChange={(event) => set({ heightFt: event.target.value })}
+                invalid={Boolean(shown.height)}
+                aria-describedby={shown.height ? "setup-height-error" : undefined}
+                className="[&_label]:sr-only"
+              />
+              <TextField
+                id="setup-height-in"
+                label="Inches"
+                unit={{ short: "in", long: "inches" }}
+                inputMode="numeric"
+                autoComplete="off"
+                value={values.heightIn}
+                onChange={(event) => set({ heightIn: event.target.value })}
+                invalid={Boolean(shown.height)}
+                aria-describedby={shown.height ? "setup-height-error" : undefined}
+                className="[&_label]:sr-only"
+              />
+            </div>
+            {shown.height && <FieldError id="setup-height-error">{shown.height}</FieldError>}
+          </fieldset>
+        ) : (
+          <TextField
+            id="setup-height-cm"
+            label="Height"
+            unit={{ short: "cm", long: "centimeters" }}
+            inputMode="decimal"
+            autoComplete="off"
+            value={values.heightCm}
+            onChange={(event) => set({ heightCm: event.target.value })}
+            error={shown.height}
+          />
+        )}
+
         <TextField
-          id="setup-height-cm"
-          label="Height"
-          unit={{ short: "cm", long: "centimeters" }}
+          id="setup-weight"
+          label="Weight"
+          info="Used only to estimate your needs. Only your account can see it."
+          unit={us ? { short: "lb", long: "pounds" } : { short: "kg", long: "kilograms" }}
           inputMode="decimal"
           autoComplete="off"
-          value={values.heightCm}
-          onChange={(event) => set({ heightCm: event.target.value })}
-          error={shown.height}
+          value={values.weight}
+          onChange={(event) => set({ weight: event.target.value })}
+          error={shown.weight}
         />
-      )}
+      </div>
 
-      <TextField
-        id="setup-weight"
-        label="Weight"
-        info="Used only to estimate your needs. Only your account can see it."
-        unit={us ? { short: "lb", long: "pounds" } : { short: "kg", long: "kilograms" }}
-        inputMode="decimal"
-        autoComplete="off"
-        value={values.weight}
-        onChange={(event) => set({ weight: event.target.value })}
-        error={shown.weight}
-      />
+      <div className={PAIR}>
+        <BirthDateField values={values} set={set} today={today} error={shown.birthDate} />
 
-      <BirthDateField values={values} set={set} today={today} error={shown.birthDate} />
-
-      <ChoiceField
-        name="sex"
-        legend="Sex"
-        info="Calorie and vitamin estimates differ by sex; non-binary uses a blend of both. Only your account can see it."
-        options={SEX_OPTIONS}
-        value={values.sex}
-        onChange={(sex) => set({ sex })}
-        error={shown.sex}
-      />
+        <ChoiceField
+          name="sex"
+          legend="Sex"
+          info="Calorie and vitamin estimates differ by sex; non-binary uses a blend of both. Only your account can see it."
+          options={SEX_OPTIONS}
+          value={values.sex}
+          onChange={(sex) => set({ sex })}
+          error={shown.sex}
+        />
+      </div>
 
       <ChoiceField
         name="activity"
@@ -315,17 +328,30 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
         error={shown.activity}
       />
 
-      <fieldset className="flex flex-col gap-5 rounded-card border-[1.5px] border-line bg-paper p-4">
-        <legend className="px-1 font-display text-lg font-extrabold">
+      <fieldset className="flex flex-col gap-4 rounded-card border-[1.5px] border-line bg-paper p-4">
+        <legend className="float-left w-full font-display text-lg font-extrabold">
           Diet notes <span className="text-sm font-normal text-muted">(optional)</span>
         </legend>
-        <ChoiceField
-          name="pattern"
-          legend="How do you eat?"
-          options={PATTERN_OPTIONS}
-          value={values.pattern}
-          onChange={(pattern) => set({ pattern })}
-        />
+        {/* Side by side only when the pregnancy question shows; otherwise full width. */}
+        <div className={asksLifeStage(values.sex) ? PAIR : ""}>
+          <ChoiceField
+            name="pattern"
+            legend="How do you eat?"
+            options={PATTERN_OPTIONS}
+            value={values.pattern}
+            onChange={(pattern) => set({ pattern })}
+          />
+          {asksLifeStage(values.sex) && (
+            <ChoiceField
+              name="lifeStage"
+              legend="Pregnant or breastfeeding?"
+              hint="Uses the official calorie, protein, iron and vitamin values for pregnancy or breastfeeding."
+              options={LIFE_STAGE_OPTIONS.map(({ value, label }) => ({ value, label }))}
+              value={values.lifeStage}
+              onChange={(lifeStage) => set({ lifeStage })}
+            />
+          )}
+        </div>
         <CheckboxPills
           name="allergies"
           legend="Allergies or intolerances"
@@ -333,16 +359,6 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
           values={values.allergies}
           onChange={(allergies) => set({ allergies })}
         />
-        {asksLifeStage(values.sex) && (
-          <ChoiceField
-            name="lifeStage"
-            legend="Pregnant or breastfeeding?"
-            hint="Uses the official calorie, protein, iron and vitamin values for pregnancy or breastfeeding."
-            options={LIFE_STAGE_OPTIONS.map(({ value, label }) => ({ value, label }))}
-            value={values.lifeStage}
-            onChange={(lifeStage) => set({ lifeStage })}
-          />
-        )}
       </fieldset>
 
       <Button type="submit" disabled={saving} className="min-h-12 self-start px-7 text-[17px]">

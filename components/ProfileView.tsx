@@ -18,12 +18,12 @@ import { showToast } from "@/lib/toast";
 import { useToday } from "@/lib/useToday";
 import { computeTargets, explainTarget, formatTarget, maintenanceCalories } from "@/lib/targets";
 
-// Your profile: the details you entered, the maintenance estimate they give,
+// Profile: the details you entered, the maintenance estimate they give,
 // and the daily ranges that follow from them (each with an explanation).
 export function ProfileView() {
   const data = useSavedData();
   const today = useToday();
-  if (!data?.profile || !today) return <PageHeader title="Your profile" />;
+  if (!data?.profile || !today) return <PageHeader title="Profile" />;
 
   const { profile } = data;
   const targets = computeTargets(profile, today);
@@ -33,7 +33,7 @@ export function ProfileView() {
     <>
       <PageHeader
         eyebrow={firstVisit ? "Step 2 of 2" : undefined}
-        title="Your profile"
+        title="Profile"
       />
       <div className="flex max-w-2xl flex-col gap-5">
         {/* Right after setup, the next step comes first, not after the ranges. */}
@@ -44,7 +44,14 @@ export function ProfileView() {
         )}
         <MemberCard profile={profile} today={today} />
 
-        <h2 className="-mb-2 mt-2 font-display text-2xl font-extrabold">Your daily ranges</h2>
+        <div className="mt-2 flex flex-col gap-1">
+          <h2 className="font-display text-2xl font-extrabold">Your daily ranges</h2>
+          {/* The maintenance estimate lives here, with the ranges it sets. */}
+          <p className="text-[15px] text-muted">
+            Built around <b className="text-soil">about {formatValue(Math.round(maintenanceCalories(profile, today) / 10) * 10)} kcal a day</b>,
+            the estimate to keep your weight steady.
+          </p>
+        </div>
         {NUTRIENT_GROUPS.map((group, index) => (
           <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]}`}>
             <h3 className="font-display text-xl font-extrabold">{group.title}</h3>
@@ -105,7 +112,6 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
   const stat = (label: string) => facts.find((fact) => fact.label === label)!.value;
   const diet = dietOf(profile);
   const lifeStage = LIFE_STAGE_OPTIONS.find((option) => option.value === diet.lifeStage)!;
-  const kcal = Math.round(maintenanceCalories(profile, today) / 10) * 10;
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
 
@@ -139,9 +145,6 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-leaf-tint px-3 py-1 text-sm font-bold">{stat("Sex")}</span>
         <span className="rounded-full bg-lemon-tint px-3 py-1 text-sm font-bold">{stat("Activity")}</span>
-        <span className="ml-auto rounded-full bg-lemon px-3.5 py-1.5 text-sm font-bold">
-          <span aria-hidden="true">★ </span>Maintenance about {formatValue(kcal)} kcal a day
-        </span>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-band pt-3">

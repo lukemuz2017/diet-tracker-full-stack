@@ -15,7 +15,7 @@ flowchart LR
     A(["Open app, nothing saved"]) --> B["Welcome · /<br/>what it's for · Get started"]
     B --> C["Your details · /setup<br/>height, weight, date of birth, sex, activity<br/>optional diet notes"]
     C -- "missing or out-of-range value:<br/>error by the field, input kept" --> C
-    C --> D["Your profile · /profile<br/>your ranges, ⓘ explains each<br/>Log your first food"]
+    C --> D["Profile · /profile<br/>your ranges, ⓘ explains each<br/>Log your first food"]
     D --> E["Add food pop-up · /log<br/>search or browse · pick foods · add"]
   end
 
@@ -50,7 +50,7 @@ Shared navigation, shown once setup is done: **Dashboard · History · Profile �
 |---|---|
 | `/` | Welcome card when nothing is saved; goes to the Food log once you're set up |
 | `/setup` | Your details: units, height, weight, date of birth (typed as month/day/year, slashes filled in, or picked from a calendar with month and year menus), sex (female, male, non-binary), activity level. Reused, prefilled, to edit them later, plus optional diet notes: eating pattern, allergies or intolerances, and (for female and non-binary) pregnancy or breastfeeding |
-| `/profile` | Your profile: a market member card (height, weight and age tiles, sex and activity chips, a maintenance badge, diet-note tags, Edit details) above your daily ranges, each with an ⓘ explanation. `/targets` forwards here |
+| `/profile` | Profile: a market member card (height, weight and age tiles, sex and activity chips, a maintenance badge, diet-note tags, Edit details) above your daily ranges, each with an ⓘ explanation. `/targets` forwards here |
 | `/faq` | How the app works, in short answers grouped by topic (the basics, your week, your ranges, food and logging), including that the ranges are estimates, not medical advice |
 | `/log` | **Dashboard.** One page, no tabs: the summary tiles; a **Today** row (calories so far, status, See meals, Mark complete, + Add food; today isn't in the ribbons until it's complete); then the week ribbons, one row per nutrient with a cell per day (in range / under / over / not logged, and brown-bag kraft for a day that's logged but not marked complete) and the average that counts. On a phone the grid shows 3 days at a time with ‹ › arrows, opening on the newest; wider screens show all 7. Clicking a day (header or cell) opens it in a **side panel** (status, Mark complete, highlight tags for what the day did well plus at most one heads-up, foods under Breakfast / Lunch / Dinner / Snacks, collapsed to a count and calories until tapped, each with a + Add, totals); clicking a nutrient expands its weekly detail (bar against target, then each day with its amount and the food that gave the most). **+ Add food** (also opened by `/log?add=1`, e.g. "Log your first food") opens a **pop-up form** over a blurred page. Picked foods collect in a "To add" list (picking one again adds to its amount; Clear empties it); one button adds them to the meal, with Undo, and the pop-up stays open for the next meal, with the day's calories so far, Mark complete and Done at the bottom. The list is kept for the tab, so closing the pop-up or visiting New recipe doesn't lose it ("Add food · 2 picked"). Escape in the search closes only the suggestions. Undo messages show inside an open pop-up or panel (a Meal choice, preset from the meal you clicked or the time of day; a Day dropdown that opens a month calendar limited to today and the 6 days before, search with Foods / Meals & recipes) |
 | `/week` | Old address; forwards to `/log` |
