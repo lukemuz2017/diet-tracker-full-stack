@@ -34,14 +34,17 @@ Name: Diet Tracker. Repo folder: `health-tracker`.
 ## Course context
 
 - MPCS 51238 *Design, Build, Ship*, Assignment 3, "Patterns & Flows: An Everyday Tool". Due **Tue Oct 20, 2026, 5:30 PM**. The brief is `Assignment 3 - Patterns & Flows.pdf` in the repo root. It's gitignored, so never commit it.
+- Now **Assignment 4, "Full Stack App"**, due **Tue Oct 27, 2026, 5:30 PM**. The brief is `Design, Build, Ship - Assignment 4 - Full Stack App.pdf` in the repo root (gitignored, never commit it). It extends this tool with Clerk sign-in, Supabase with row-level security on every table, and one external API (USDA FoodData Central), plus a Playwright test that two users can't see each other's data (watched failing first), `/security-review` on a branch, and a Vercel deploy a classmate can use. Work on the `assignment-4` branch.
 - The student directs every change. Don't one-shot features: propose options, let the student choose, then build in small steps. A one-shot submission is marked incomplete.
 - Graded: a working Vercel URL; a page per flow step with shared navigation; the flow diagram in `README.md`; a first visit that's useful right away; form errors next to the field that say what to do and keep what was typed; a reason to come back, with data that persists; keyboard access, real labels, contrast checked; the first-run check feedback in `README.md`; a commit history that shows progress.
 
 ## Hard constraints
 
-- **Stack:** Next.js 16 (App Router) + React 19 + Tailwind CSS 4 + TypeScript, scaffolded with `create-next-app`. Deployed on Vercel's free Hobby plan from the student's own GitHub repo.
-- **Storage:** browser `localStorage` only. No database, no backend or API routes for data, no accounts or sign-in, no external APIs (including nutrition lookup APIs). Data lives on the device the person used; "logging in" just means opening the app.
-- **Dependencies:** add a package only when it's clearly needed, and ask first. Push back on a database, auth, state-management libraries or UI kits.
+- **Stack:** Next.js 16 (App Router) + React 19 + Tailwind CSS 4 + TypeScript, scaffolded with `create-next-app`. Clerk for sign-in (development keys only), Supabase for data, USDA FoodData Central for food search. Deployed on Vercel's free Hobby plan from the student's own GitHub repo. Free tiers only.
+- **Storage:** saved data lives in Supabase (see "Data model"), one set of rows per Clerk user, with row-level security on every table. A signed-out visitor sees no one's data. Browser storage is only for per-tab or per-browser conveniences (the "To add" list, open panels), never for a person's data.
+- **Keys:** in `.env.local` (gitignored) and Vercel's environment variables, never in code or commits. `.claude/settings.json` denies the agent reading `.env` files; the student edits `.env.local` themselves. Secret keys (`USDA_API_KEY`, Clerk's secret key) have no `NEXT_PUBLIC_` prefix and are used only on the server.
+- **External API:** USDA FoodData Central, called only from our server (a route handler), because the key must stay secret and the free key is rate-limited (1,000 requests/hour). Design loading, nothing found (`totalHits: 0` is a 200, not an error) and API-down states.
+- **Dependencies:** add a package only when it's clearly needed, and ask first. Clerk, Supabase's client and Playwright are expected for this assignment; push back on anything else (state-management libraries, UI kits, ORMs).
 - **Dev machine:** Windows. Use `npm` (`npm run dev`, `npm run build`, `npm run lint`).
 
 ## Design rules (from the brief)
@@ -62,6 +65,21 @@ Targets are estimates for maintaining weight, not medical advice. Say so once in
 - **Rolling 7-day window:** every nutrient is judged on its average over today and the 6 days before; daily ranges are only a guide. The full rules (only days the person marks complete count, first-week stages, the 14-day weekend trend) are in `flows.md` under "How the 7-day window works". Keep this logic in pure functions in `lib/`.
 - **Unknown values:** only food name, date, calories, protein, carbs and fat are required. A blank optional nutrient is unknown, not zero, and summaries say how many foods they're based on.
 - **Common foods:** a static, bundled list (about 40 foods) with all 10 nutrients per standard serving. Values come from USDA FoodData Central, cited in the data file.
+
+## Data model (Supabase)
+
+Four tables. Every row belongs to one person: `user_id` is the Clerk user id (text, e.g. `user_2abc…`), filled in by the database from the signed-in token (`default auth.jwt()->>'sub'`), so the browser never sends it. Row-level security is on for every table, with one rule: a person can select, insert, update and delete a row only when `user_id = auth.jwt()->>'sub'`. Tables are created as migrations.
+
+- **`profiles`**: one row per person, the setup details. `user_id` (primary key), `units`, `height_cm`, `weight_kg`, `birth_date`, `sex`, `activity`, `allergies text[]`, `pattern`, `life_stage`, `updated_at`. Mirrors `Profile` in `lib/profile.ts`.
+- **`my_foods`**: foods the person saved, from USDA search or recipes they built. `id` (uuid primary key), `user_id`, `kind` (`'usda'` or `'recipe'`), `name`, `fdc_id` (USDA only), `nutrients jsonb` (per 100 g for USDA, per serving for a recipe), `servings` (recipes), `ingredients jsonb` (recipes), `created_at`. Unique `(user_id, fdc_id)`, so a USDA food is saved once.
+- **`log_entries`**: one row per food eaten. `id` (uuid primary key), `user_id`, `date` (local date eaten), `meal`, `name`, `amount`, `source` (`'builtin:<id>'`, `'usda:<fdcId>'` or `'recipe:<id>'`), `nutrients jsonb` (totals, copied at logging time), `is_sample` (from "Load a sample 2 weeks"), `created_at`. Mirrors `Entry` in `lib/storage.ts`.
+- **`complete_days`**: one row per day marked complete. `user_id`, `date`; primary key `(user_id, date)`.
+
+Notes:
+- `nutrients` is `jsonb` shaped like `Nutrients` in `lib/nutrients.ts` (the 10 keys); a missing key means unknown, not zero.
+- Entries copy their nutrients, so editing a recipe or removing a saved food never changes past days.
+- The 41 common foods stay bundled in `lib/foods-data.ts`, not in the database.
+- No import from the old localStorage data: signed-in data starts empty.
 
 ## Code conventions
 
@@ -153,4 +171,5 @@ Targets are estimates for maintaining weight, not medical advice. Say so once in
 - 2026-10-20 (student): the Dashboard summary shows just the title and short dates ("Oct 13 – Oct 19", `formatShortDay`) beside the tiles; no verdict line ("Mostly balanced." / "A few things to work on.").
 - 2026-10-20 (student): on phones (below sm) the week grid shows 3 days at a time with ‹ › arrows (opens on the newest; `PHONE_DAYS` in `components/WeekRibbons.tsx`) instead of scrolling sideways; sm and up show all 7. The nutrient detail table's first column is "Day" with dates as "Oct 13".
 - 2026-10-20: README and flows.md brought up to date (diagram, first-week stages, states), `user-flows.pdf` regenerated, the first-run check written up in README, and a one-page process write-up added (`docs/`). The weekend vs. weekday trend was dropped for time.
-- Next: confirm the Vercel deploy and add its URL to README.
+- 2026-10-25 (Assignment 4, student): API is USDA FoodData Central (search returns per-100 g values; our 10 nutrients by id: 1008 calories, 1003 protein, 1005 carbs, 1004 fat, 1079 fiber, 1092 potassium, 1087 calcium, 1089 iron, 1106 vitamin A RAE, 1162 vitamin C; `foodMeasures` is often empty). Data model planned with the student: four tables (above), recipes share `my_foods` with saved USDA foods, and signed-in data starts fresh with no localStorage import. Key deny rule added in `.claude/settings.json`.
+- Next: Clerk sign-in, then Supabase tables and row-level security, then move `lib/storage.ts` to Supabase.
