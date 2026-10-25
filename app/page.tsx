@@ -6,9 +6,9 @@ import { WelcomeStart } from "@/components/WelcomeStart";
 // Real numbers per serving, from the built-in USDA food list.
 const stickers = [
   { food: "Banana", amount: "422 mg", nutrient: "potassium", tone: "bg-lemon text-soil", ring: "var(--color-soil)", ground: "var(--color-lemon)", tilt: "-8deg", place: "left-[3%] top-[6%]" },
-  { food: "½ avocado", amount: "7 g", nutrient: "fiber", tone: "bg-leaf text-white", ring: "var(--color-paper)", ground: "var(--color-leaf)", tilt: "6deg", place: "right-[4%] top-[10%]" },
+  { food: "Avocado", amount: "7 g", nutrient: "fiber", tone: "bg-leaf text-white", ring: "var(--color-paper)", ground: "var(--color-leaf)", tilt: "6deg", place: "right-[4%] top-[10%]" },
   { food: "Orange", amount: "70 mg", nutrient: "vitamin C", tone: "bg-tomato text-white", ring: "var(--color-paper)", ground: "var(--color-tomato)", tilt: "-4deg", place: "left-[6%] bottom-[8%]" },
-  { food: "Spinach, ½ cup", amount: "3.2 mg", nutrient: "iron", tone: "bg-paper text-leaf", ring: "var(--color-leaf)", ground: "var(--color-paper)", tilt: "9deg", place: "right-[7%] bottom-[6%]" },
+  { food: "Spinach", amount: "3.2 mg", nutrient: "iron", tone: "bg-paper text-leaf", ring: "var(--color-leaf)", ground: "var(--color-paper)", tilt: "9deg", place: "right-[7%] bottom-[6%]" },
 ];
 
 const steps = [

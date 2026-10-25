@@ -8,7 +8,7 @@ import type { CSSProperties } from "react";
 const STICKERS = [
   { food: "Strawberries", amount: "89 mg", nutrient: "vitamin C", tone: "bg-tomato text-white", ring: "var(--color-paper)", ground: "var(--color-tomato)", tilt: "6deg", place: "left-full ml-3 top-8" },
   { food: "Banana", amount: "422 mg", nutrient: "potassium", tone: "bg-lemon text-soil", ring: "var(--color-soil)", ground: "var(--color-lemon)", tilt: "-7deg", place: "right-full mr-1 top-44" },
-  { food: "½ avocado", amount: "7 g", nutrient: "fiber", tone: "bg-leaf text-white", ring: "var(--color-paper)", ground: "var(--color-leaf)", tilt: "-4deg", place: "left-full ml-5 top-[21rem]" },
+  { food: "Avocado", amount: "7 g", nutrient: "fiber", tone: "bg-leaf text-white", ring: "var(--color-paper)", ground: "var(--color-leaf)", tilt: "-4deg", place: "left-full ml-5 top-[21rem]" },
   { food: "Sweet potato", amount: "1,096 mcg", nutrient: "vitamin A", tone: "bg-carrot text-soil", ring: "var(--color-soil)", ground: "var(--color-carrot)", tilt: "8deg", place: "right-full mr-0.5 top-[34rem]" },
 ];
 
