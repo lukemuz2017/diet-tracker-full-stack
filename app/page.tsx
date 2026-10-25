@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { RedirectIfSetUp } from "@/components/Gates";
-import { ButtonLink } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Card";
+import { WelcomeStart } from "@/components/WelcomeStart";
 
 // Real numbers per serving, from the built-in USDA food list.
 const stickers = [
@@ -52,7 +52,7 @@ export default function WelcomePage() {
             Welcome to Diet Tracker
           </h1>
           <p className="text-[17px] text-muted">
-            See whether what you eat adds up to a balanced week, with ranges made for you. No calorie cutting, no account.
+            See whether what you eat adds up to a balanced week, with ranges made for you. No calorie cutting.
           </p>
         </div>
 
@@ -74,10 +74,7 @@ export default function WelcomePage() {
         </ol>
 
         <div className="rise-in flex flex-col gap-2 pt-1" style={delay(1000)}>
-          <ButtonLink href="/setup" className="min-h-12 text-[17px]">
-            Get started
-          </ButtonLink>
-          <p className="text-center text-sm text-muted">About a minute · Saved on this device</p>
+          <WelcomeStart />
         </div>
       </section>
     </div>
