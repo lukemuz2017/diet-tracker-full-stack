@@ -2,6 +2,7 @@
 
 import { MacroSplit, NutrientByDay } from "@/components/HistoryCharts";
 import { NutrientBar } from "@/components/NutrientBar";
+import { WeekCompare, WhereFrom } from "@/components/HistoryInsights";
 import { Card } from "@/components/ui/Card";
 import { formatDay } from "@/lib/dates";
 import { SCORED_KEYS, statusFor } from "@/lib/log";
@@ -122,6 +123,8 @@ export function WindowView({
         <>
           {summary.logged > 0 && <NutrientByDay summary={summary} targets={targets} />}
           {summary.counted > 0 && <MacroSplit averages={summary.averages} teen={profileAge(profile, today) <= 18} />}
+          <WeekCompare data={data} targets={targets} end={end} />
+          {summary.counted > 0 && <WhereFrom data={data} summary={summary} />}
         </>
       ) : summary.counted === 0 ? (
         <Card>

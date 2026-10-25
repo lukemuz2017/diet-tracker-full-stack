@@ -6,6 +6,7 @@ import { formatDay, formatShortDay } from "@/lib/dates";
 import { formatValue, statusFor } from "@/lib/log";
 import { NUTRIENT_GROUPS, NUTRIENTS, type NutrientKey, type Nutrients } from "@/lib/nutrients";
 import { formatTarget, type Target, type Targets } from "@/lib/targets";
+import { MACROS, macroRange, macroShares, macroTakeaway, type MacroKey } from "@/lib/insights";
 import { runningAverages, type WindowSummary } from "@/lib/week";
 
 // Charts for History (dataviz skill): one measure per chart, recessive grid,
@@ -234,44 +235,60 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
 
 // Validated with the dataviz palette checker (light surface): all checks pass;
 // carbs is below 3:1 contrast, so every segment carries a visible label.
-const MACROS = [
-  { key: "protein", label: "Protein", kcalPerGram: 4, color: "#2E8048", range: [10, 35] },
-  { key: "carbs", label: "Carbs", kcalPerGram: 4, color: "#D29A12", range: [45, 65] },
-  { key: "fat", label: "Fat", kcalPerGram: 9, color: "#B04E2C", range: [20, 35] },
-] as const;
+const MACRO_COLORS: Record<MacroKey, string> = { protein: "#2E8048", carbs: "#D29A12", fat: "#B04E2C" };
+/** The gauges run from 0 to this share of calories (carbs' range ends at 65%). */
+const GAUGE_MAX = 80;
 
-/** Share of calories from protein, carbs and fat (averages), against their ranges. */
+/**
+ * Share of calories from protein, carbs and fat (averages): the stacked bar,
+ * one sentence on where they stand, and a gauge per macro showing the share
+ * against its healthy range (lib/insights.ts).
+ */
 export function MacroSplit({ averages, teen }: { averages: Nutrients; teen: boolean }) {
-  const kcal = MACROS.map((macro) => (averages[macro.key] ?? 0) * macro.kcalPerGram);
-  const total = kcal.reduce((sum, value) => sum + value, 0);
-  if (total === 0) return null;
-  const shares = kcal.map((value) => (value / total) * 100);
+  const shares = macroShares(averages);
+  if (!shares) return null;
 
   return (
     <Card className="flex flex-col gap-4">
-      <h2 className="font-display text-xl font-extrabold">Where your calories came from</h2>
+      <div className="flex flex-col gap-1">
+        <h2 className="font-display text-xl font-extrabold">Where your calories came from</h2>
+        <p className="text-[15px]">{macroTakeaway(shares, teen)}</p>
+      </div>
       <div className="flex h-10 w-full gap-0.5 overflow-hidden rounded-[6px]" aria-hidden="true">
-        {MACROS.map((macro, index) =>
-          shares[index] > 0 ? (
-            <span key={macro.key} className="h-full first:rounded-l-[6px] last:rounded-r-[6px]" style={{ width: `${shares[index]}%`, background: macro.color }} title={`${macro.label}: ${Math.round(shares[index])}%`} />
+        {MACROS.map((macro) =>
+          shares[macro.key] > 0 ? (
+            <span
+              key={macro.key}
+              className="h-full first:rounded-l-[6px] last:rounded-r-[6px]"
+              style={{ width: `${shares[macro.key]}%`, background: MACRO_COLORS[macro.key] }}
+              title={`${macro.label}: ${Math.round(shares[macro.key])}%`}
+            />
           ) : null,
         )}
       </div>
-      <ul className="grid gap-3 sm:grid-cols-3">
-        {MACROS.map((macro, index) => {
-          const [low, high] = macro.key === "fat" && teen ? [25, 35] : macro.range;
-          const share = Math.round(shares[index]);
-          const inRange = share >= low && share <= high;
+      <ul className="flex flex-col gap-4">
+        {MACROS.map((macro) => {
+          const [low, high] = macroRange(macro.key, teen);
+          const share = Math.round(shares[macro.key]);
+          const where = share < low ? "below" : share > high ? "above" : "in range";
           return (
-            <li key={macro.key} className="flex items-start gap-2.5">
-              <span aria-hidden="true" className="mt-1 size-3.5 flex-none rounded-[4px]" style={{ background: macro.color }} />
-              <span className="flex flex-col">
+            <li key={macro.key} className="grid items-center gap-x-4 gap-y-1.5 sm:grid-cols-[15rem_minmax(0,1fr)]">
+              <span className="flex items-center gap-2.5">
+                <span aria-hidden="true" className="size-3.5 flex-none rounded-[4px]" style={{ background: MACRO_COLORS[macro.key] }} />
                 <span>
                   <b>{macro.label}</b> {share}%
+                  <span className="block text-[13px] text-muted">
+                    Healthy range {low}–{high}% · {where}
+                  </span>
                 </span>
-                <span className="text-[13px] text-muted">
-                  Range {low}–{high}% · {inRange ? "in range" : share < low ? "below" : "above"}
-                </span>
+              </span>
+              {/* The shaded band is the healthy range; the dot is where you are. */}
+              <span aria-hidden="true" className="relative block h-3 rounded-full bg-track">
+                <span className="absolute inset-y-0 rounded-full bg-band" style={{ left: `${(low / GAUGE_MAX) * 100}%`, width: `${((high - low) / GAUGE_MAX) * 100}%` }} />
+                <span
+                  className="absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-soil"
+                  style={{ left: `${Math.min(share, GAUGE_MAX) / GAUGE_MAX * 100}%`, background: MACRO_COLORS[macro.key] }}
+                />
               </span>
             </li>
           );
