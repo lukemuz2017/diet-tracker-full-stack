@@ -8,6 +8,7 @@ import type { Nutrients } from "./nutrients.ts";
 import { isProfile, type Profile } from "./profile.ts";
 import type { Ingredient, Recipe } from "./recipe.ts";
 import type { Entry, SavedData, SavedFood } from "./storage.ts";
+import type { Portion } from "./usda.ts";
 
 export interface ProfileRow {
   units: Profile["units"];
@@ -41,6 +42,7 @@ export interface RecipeRow {
   name: string;
   fdc_id: null;
   nutrients: Nutrients;
+  portions: null;
   servings: number;
   ingredients: Ingredient[] | null;
   created_at: string;
@@ -53,6 +55,7 @@ export interface SavedFoodRow {
   fdc_id: number;
   /** Per 100 g. */
   nutrients: Nutrients;
+  portions: Portion[] | null;
   servings: null;
   ingredients: null;
   created_at: string;
@@ -136,6 +139,7 @@ export function recipeToRow(recipe: Recipe): RecipeRow {
     name: recipe.name,
     fdc_id: null,
     nutrients: recipe.perServing,
+    portions: null,
     servings: recipe.servings,
     ingredients: recipe.ingredients ?? null,
     created_at: recipe.createdAt,
@@ -160,6 +164,7 @@ export function savedFoodToRow(food: SavedFood): SavedFoodRow {
     name: food.name,
     fdc_id: food.fdcId,
     nutrients: food.per100g,
+    portions: food.portions?.length ? food.portions : null,
     servings: null,
     ingredients: null,
     created_at: food.createdAt,
@@ -167,7 +172,14 @@ export function savedFoodToRow(food: SavedFood): SavedFoodRow {
 }
 
 export function savedFoodFromRow(row: SavedFoodRow): SavedFood {
-  return { id: row.id, fdcId: Number(row.fdc_id), name: row.name, per100g: row.nutrients ?? {}, createdAt: row.created_at };
+  return {
+    id: row.id,
+    fdcId: Number(row.fdc_id),
+    name: row.name,
+    per100g: row.nutrients ?? {},
+    ...(row.portions?.length ? { portions: row.portions } : {}),
+    createdAt: row.created_at,
+  };
 }
 
 /** Everything one person has saved, from their rows (RLS returns only theirs). */

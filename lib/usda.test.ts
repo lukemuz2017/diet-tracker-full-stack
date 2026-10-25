@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cleanQuery, foodsFromSearch } from "./usda.ts";
+import { cleanQuery, foodsFromSearch, portionsFrom } from "./usda.ts";
 
 // Trimmed from a real response to /foods/search?query=greek yogurt.
 const yogurt = {
@@ -65,4 +65,46 @@ test("searches are trimmed and kept to a sensible length", () => {
   assert.equal(cleanQuery("a"), null);
   assert.equal(cleanQuery(null), null);
   assert.equal(cleanQuery("x".repeat(61)), null);
+});
+
+test("SR Legacy portions read as amount and modifier, smallest first", () => {
+  // From /foods?fdcIds=171284 (Yogurt, plain, whole milk).
+  const details = {
+    foodPortions: [
+      { amount: 1, modifier: "container (8 oz)", measureUnit: { name: "undetermined" }, gramWeight: 227 },
+      { amount: 1, modifier: "container (6 oz)", measureUnit: { name: "undetermined" }, gramWeight: 170 },
+      { amount: 0.5, modifier: "container (4 oz)", measureUnit: { name: "undetermined" }, gramWeight: 113 },
+      { amount: 1, modifier: "cup (8 fl oz)", measureUnit: { name: "undetermined" }, gramWeight: 245 },
+    ],
+  };
+  assert.deepEqual(portionsFrom(details), [
+    { label: "½ container (4 oz)", grams: 113 },
+    { label: "1 container (6 oz)", grams: 170 },
+    { label: "1 container (8 oz)", grams: 227 },
+    { label: "1 cup (8 fl oz)", grams: 245 },
+  ]);
+});
+
+test("FNDDS portions use their description; 'not specified' and numeric codes are skipped", () => {
+  // From /foods?fdcIds=2341000 (Cream, whipped).
+  const details = {
+    foodPortions: [
+      { portionDescription: "1 cup", modifier: "10205", measureUnit: { name: "undetermined" }, gramWeight: 40 },
+      { portionDescription: "Quantity not specified", modifier: "90000", gramWeight: 20 },
+    ],
+  };
+  assert.deepEqual(portionsFrom(details), [{ label: "1 cup", grams: 40 }]);
+});
+
+test("Foundation portions read as amount and unit; foods without portions get none", () => {
+  assert.deepEqual(portionsFrom({ foodPortions: [{ amount: 1, measureUnit: { name: "cup" }, modifier: "", gramWeight: 128 }] }), [
+    { label: "1 cup", grams: 128 },
+  ]);
+  assert.deepEqual(portionsFrom({ fdcId: 170914 }), []);
+});
+
+test("a numeric code is never shown as a portion name", () => {
+  assert.deepEqual(portionsFrom({ foodPortions: [{ amount: 1, modifier: "10205", measureUnit: { name: "cup" }, gramWeight: 40 }] }), [
+    { label: "1 cup", grams: 40 },
+  ]);
 });

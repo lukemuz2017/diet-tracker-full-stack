@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { cacheLife } from "next/cache";
-import { USDA_DATA_TYPES, USDA_PAGE_SIZE, cleanQuery, foodsFromSearch, type UsdaFood } from "@/lib/usda";
+import { USDA_DATA_TYPES, USDA_PAGE_SIZE, cleanQuery, foodsFromSearch, portionsFrom, type UsdaFood } from "@/lib/usda";
 
 // GET /api/foods/search?q=greek+yogurt → { foods: UsdaFood[] }
 //
@@ -23,7 +23,34 @@ async function searchUsda(query: string): Promise<UsdaFood[]> {
   const response = await fetch(url, { headers: { "X-Api-Key": key }, signal: AbortSignal.timeout(8000) });
   if (!response.ok) throw new Error(`USDA answered ${response.status}`);
   // Failures throw, so they're never cached: the next search tries again.
-  return foodsFromSearch(await response.json()).slice(0, USDA_PAGE_SIZE);
+  const foods = foodsFromSearch(await response.json()).slice(0, USDA_PAGE_SIZE);
+  return withPortions(foods, key);
+}
+
+// Search results don't include household portions ("1 cup = 245 g"); the
+// food details do. One batch request covers all the results. If it fails,
+// the foods are still returned, measured in grams only.
+async function withPortions(foods: UsdaFood[], key: string): Promise<UsdaFood[]> {
+  if (foods.length === 0) return foods;
+  try {
+    const response = await fetch("https://api.nal.usda.gov/fdc/v1/foods", {
+      method: "POST",
+      headers: { "X-Api-Key": key, "Content-Type": "application/json" },
+      // Only energy is asked for, to keep the response small; portions always come.
+      body: JSON.stringify({ fdcIds: foods.map((food) => food.fdcId), format: "full", nutrients: [208] }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return foods;
+    const details: unknown = await response.json();
+    if (!Array.isArray(details)) return foods;
+    const byId = new Map(details.map((item: { fdcId?: number }) => [item?.fdcId, portionsFrom(item)]));
+    return foods.map((food) => {
+      const portions = byId.get(food.fdcId);
+      return portions?.length ? { ...food, portions } : food;
+    });
+  } catch {
+    return foods;
+  }
 }
 
 export async function GET(request: Request) {

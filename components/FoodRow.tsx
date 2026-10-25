@@ -43,11 +43,31 @@ export function AmountSelect({
         onChange={(event) => onChange(Number(event.target.value))}
         className="h-11 rounded-field border-[1.5px] border-field bg-white px-2 text-[15px]"
       >
-        {choicesWith(spec, quantity).map((choice) => (
-          <option key={choice} value={choice}>
-            {formatChoice(spec, choice)}
-          </option>
-        ))}
+        {spec.named?.length ? (
+          <>
+            {/* USDA foods: household portions first, then weights. */}
+            <optgroup label="Portions">
+              {spec.named.map((item) => (
+                <option key={`named-${item.quantity}`} value={item.quantity}>
+                  {item.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="By weight">
+              {choicesWith(spec, quantity).map((choice) => (
+                <option key={choice} value={choice}>
+                  {formatChoice(spec, choice)}
+                </option>
+              ))}
+            </optgroup>
+          </>
+        ) : (
+          choicesWith(spec, quantity).map((choice) => (
+            <option key={choice} value={choice}>
+              {formatChoice(spec, choice)}
+            </option>
+          ))
+        )}
       </select>
     </>
   );

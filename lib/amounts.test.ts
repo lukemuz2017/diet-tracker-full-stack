@@ -41,3 +41,22 @@ test("whole foods show just the number in the picker", () => {
   assert.equal(formatAmount(banana, 2), "2 bananas"); // messages still name the unit
   assert.equal(formatChoice(beans, 0.5), "½ cup");
 });
+
+test("named portions show by name, ahead of plain weights", () => {
+  const yogurt: AmountSpec = {
+    base: 100,
+    one: "g",
+    many: "g",
+    choices: [50, 100, 170],
+    named: [{ quantity: 170, label: "1 container (6 oz)" }, { quantity: 245, label: "1 cup (8 fl oz)" }],
+  };
+  assert.equal(formatAmount(yogurt, 170), "1 container (6 oz)");
+  assert.equal(formatChoice(yogurt, 245), "1 cup (8 fl oz)");
+  assert.equal(formatAmount(yogurt, 150), "150 g");
+  // 170 g is offered once, as the container; a named amount counts as offered.
+  assert.deepEqual(choicesWith(yogurt, 170), [50, 100]);
+  assert.deepEqual(choicesWith(yogurt, 245), [50, 100]);
+  assert.deepEqual(choicesWith(yogurt, 80), [50, 80, 100]);
+  // 1 container is 1.7 times the per-100 g values.
+  assert.equal(multipleFor(yogurt, 170), 1.7);
+});

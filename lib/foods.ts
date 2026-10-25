@@ -134,10 +134,26 @@ export const USDA_GRAMS: AmountSpec = {
   note: "100 g is about 3½ ounces",
 };
 
+// A USDA food's household portions ("1 container (6 oz)" = 170 g), by food id
+// ("usda:171284"). Filled from saved foods when they load and from search
+// results, so every place that shows an amount names the portion.
+const usdaPortions = new Map<string, AmountSpec>();
+
+export function rememberPortions(foodId: string, portions: { label: string; grams: number }[] | undefined) {
+  if (!portions?.length || usdaPortions.has(foodId)) return;
+  usdaPortions.set(foodId, { ...USDA_GRAMS, named: portions.map((portion) => ({ quantity: portion.grams, label: portion.label })) });
+}
+
+/** What a USDA food starts at when picked: its first "1 …" portion, else 100 g (as a multiple of 100 g). */
+export function startingMultiple(portions: { label: string; grams: number }[] | undefined): number {
+  const portion = portions?.find((item) => item.label.startsWith("1 ")) ?? portions?.[0];
+  return portion ? portion.grams / USDA_GRAMS.base : 1;
+}
+
 /** The unit a food is measured in; recipes are servings, USDA foods grams, custom foods portions. */
 export function amountFor(foodId: string | undefined): AmountSpec {
   if (foodId?.startsWith("recipe:")) return RECIPE_SERVINGS;
-  if (foodId?.startsWith("usda:")) return USDA_GRAMS;
+  if (foodId?.startsWith("usda:")) return usdaPortions.get(foodId) ?? USDA_GRAMS;
   return (foodId && AMOUNTS[foodId]) || PORTION;
 }
 

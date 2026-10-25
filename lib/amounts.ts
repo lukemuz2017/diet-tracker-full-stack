@@ -14,6 +14,11 @@ export interface AmountSpec {
   note?: string;
   /** Whole foods (banana, egg): the picker shows just the number. */
   bare?: boolean;
+  /**
+   * Household portions with their amount in this unit, e.g. "1 container
+   * (6 oz)" = 170 (grams). Offered before `choices`, and shown by name.
+   */
+  named?: { quantity: number; label: string }[];
 }
 
 /** Custom foods: the numbers entered are for one portion of what was eaten. */
@@ -31,23 +36,29 @@ export function formatQuantity(quantity: number): string {
   return String(Math.round(quantity * 100) / 100);
 }
 
-/** "½ cup", "1½ cups", "2 eggs", "3 oz". */
-export function formatAmount(spec: AmountSpec, quantity: number): string {
-  return `${formatQuantity(quantity)} ${quantity > 1 ? spec.many : spec.one}`;
+const close = (a: number, b: number) => Math.abs(a - b) < 0.001;
+
+function namedAt(spec: AmountSpec, quantity: number): string | undefined {
+  return spec.named?.find((item) => close(item.quantity, quantity))?.label;
 }
 
-const close = (a: number, b: number) => Math.abs(a - b) < 0.001;
+/** "½ cup", "1½ cups", "2 eggs", "3 oz", or a portion's name ("1 container (6 oz)"). */
+export function formatAmount(spec: AmountSpec, quantity: number): string {
+  return namedAt(spec, quantity) ?? `${formatQuantity(quantity)} ${quantity > 1 ? spec.many : spec.one}`;
+}
 
 /** A picker option: "2" for whole foods, otherwise "½ cup", "3 ounces". */
 export function formatChoice(spec: AmountSpec, quantity: number): string {
+  if (namedAt(spec, quantity)) return formatAmount(spec, quantity);
   return spec.bare ? formatQuantity(quantity) : formatAmount(spec, quantity);
 }
 
-/** The picker's choices, including `current` if it isn't one of them. */
+/** The picker's plain choices (not named portions), including `current` if it isn't offered. */
 export function choicesWith(spec: AmountSpec, current: number): number[] {
-  return spec.choices.some((choice) => close(choice, current))
-    ? spec.choices
-    : [...spec.choices, current].sort((a, b) => a - b);
+  const offered = (quantity: number) =>
+    spec.choices.some((choice) => close(choice, quantity)) || (spec.named ?? []).some((item) => close(item.quantity, quantity));
+  const choices = spec.choices.filter((choice) => !namedAt(spec, choice));
+  return offered(current) ? choices : [...choices, current].sort((a, b) => a - b);
 }
 
 /** An entry stores a multiple of the base amount; these convert both ways. */

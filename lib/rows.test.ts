@@ -75,9 +75,23 @@ test("saved USDA foods and recipes share my_foods, and split again on load", () 
   const yogurt = { id: "22222222-2222-4222-8222-222222222222", fdcId: 170914, name: "Yogurt, Greek", per100g: { calories: 82 }, createdAt: "2026-10-25T09:00:00.000Z" };
   const changes = changesBetween(EMPTY, { ...EMPTY, savedFoods: [yogurt] });
   assert.deepEqual(changes.foods.upsert, [
-    { id: yogurt.id, kind: "usda", name: "Yogurt, Greek", fdc_id: 170914, nutrients: { calories: 82 }, servings: null, ingredients: null, created_at: yogurt.createdAt },
+    { id: yogurt.id, kind: "usda", name: "Yogurt, Greek", fdc_id: 170914, nutrients: { calories: 82 }, portions: null, servings: null, ingredients: null, created_at: yogurt.createdAt },
   ]);
   const data = dataFromRows({ profile: null, entries: [], days: [], foods: changes.foods.upsert });
   assert.deepEqual(data.savedFoods, [yogurt]);
   assert.deepEqual(data.recipes, []);
+});
+
+test("a saved food's portions travel with it", () => {
+  const milk = {
+    id: "33333333-3333-4333-8333-333333333333",
+    fdcId: 171284,
+    name: "Yogurt, plain, whole milk",
+    per100g: { calories: 61 },
+    portions: [{ label: "1 container (6 oz)", grams: 170 }],
+    createdAt: "2026-10-25T09:00:00.000Z",
+  };
+  const [row] = changesBetween(EMPTY, { ...EMPTY, savedFoods: [milk] }).foods.upsert;
+  assert.deepEqual(row.portions, milk.portions);
+  assert.deepEqual(dataFromRows({ profile: null, entries: [], days: [], foods: [row] }).savedFoods, [milk]);
 });

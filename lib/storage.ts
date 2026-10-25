@@ -11,9 +11,11 @@ import type { Meal } from "./meals.ts";
 import type { Nutrients } from "./nutrients.ts";
 import type { Profile } from "./profile.ts";
 import type { Recipe } from "./recipe.ts";
+import { rememberPortions } from "./foods.ts";
 import { changesBetween, dataFromRows, hasChanges, type Changes } from "./rows.ts";
 import { supabaseFor } from "./supabase.ts";
 import { showToast } from "./toast.ts";
+import type { Portion } from "./usda.ts";
 
 export interface Entry {
   id: string;
@@ -38,6 +40,8 @@ export interface SavedFood {
   fdcId: number;
   name: string;
   per100g: Nutrients;
+  /** Household portions from USDA ("1 cup" = 245 g), if it lists any. */
+  portions?: Portion[];
   createdAt: string;
 }
 
@@ -111,15 +115,14 @@ export async function load() {
       client.from("profiles").select("units, height_cm, weight_kg, birth_date, sex, activity, allergies, pattern, life_stage").maybeSingle(),
       client.from("log_entries").select("id, date, meal, name, amount, source, nutrients, is_sample, created_at").order("created_at"),
       client.from("complete_days").select("date").order("date"),
-      client.from("my_foods").select("id, kind, name, fdc_id, nutrients, servings, ingredients, created_at").order("created_at"),
+      client.from("my_foods").select("id, kind, name, fdc_id, nutrients, portions, servings, ingredients, created_at").order("created_at"),
     ]);
     if (id !== userId) return; // Signed out or switched while loading.
     const error = profile.error ?? entries.error ?? days.error ?? foods.error;
     if (error) throw error;
-    setState({
-      status: "ready",
-      data: dataFromRows({ profile: profile.data, entries: entries.data ?? [], days: days.data ?? [], foods: foods.data ?? [] }),
-    });
+    const data = dataFromRows({ profile: profile.data, entries: entries.data ?? [], days: days.data ?? [], foods: foods.data ?? [] });
+    for (const food of data.savedFoods) rememberPortions(`usda:${food.fdcId}`, food.portions);
+    setState({ status: "ready", data });
   } catch {
     if (id === userId) setState({ status: "error", data: null });
   }

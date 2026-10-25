@@ -6,6 +6,7 @@ import type { Nutrients } from "./nutrients.ts";
 import type { Recipe } from "./recipe.ts";
 import { updateData, type Entry, type SavedFood } from "./storage.ts";
 import { showToast } from "./toast.ts";
+import type { Portion } from "./usda.ts";
 
 // Changes people make while logging, each with an Undo message.
 
@@ -109,13 +110,13 @@ export function deleteRecipe(id: string) {
 }
 
 /** Foods logged from USDA search are saved, so they come up instantly next time. */
-export function saveUsdaFoods(foods: { fdcId: number; name: string; per100g: Nutrients }[]) {
+export function saveUsdaFoods(foods: { fdcId: number; name: string; per100g: Nutrients; portions?: Portion[] }[]) {
   updateData((data) => {
     const known = new Set(data.savedFoods.map((food) => food.fdcId));
     const createdAt = new Date().toISOString();
     const added = foods
       .filter((food) => !known.has(food.fdcId) && known.add(food.fdcId))
-      .map((food) => ({ ...food, id: newId(), createdAt }));
+      .map(({ portions, ...food }) => ({ ...food, ...(portions?.length ? { portions } : {}), id: newId(), createdAt }));
     return added.length ? { ...data, savedFoods: [...data.savedFoods, ...added] } : data;
   });
 }

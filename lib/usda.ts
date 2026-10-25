@@ -2,7 +2,14 @@
 // the request itself happens on our server (app/api/foods/search/route.ts),
 // which keeps the API key secret. Values are per 100 g.
 
+import { formatQuantity } from "./amounts.ts";
 import type { NutrientKey, Nutrients } from "./nutrients.ts";
+
+/** A household portion from USDA's food details, e.g. "1 container (6 oz)" = 170 g. */
+export interface Portion {
+  label: string;
+  grams: number;
+}
 
 export interface UsdaFood {
   fdcId: number;
@@ -11,6 +18,8 @@ export interface UsdaFood {
   category?: string;
   /** Per 100 g. A nutrient USDA doesn't list is left out (unknown, not zero). */
   per100g: Nutrients;
+  /** Household portions, smallest first; absent when USDA lists none. */
+  portions?: Portion[];
 }
 
 /** USDA nutrient ids for the ten tracked nutrients (AGENTS.md decisions log). */
@@ -99,4 +108,46 @@ export function foodsFromSearch(response: unknown): UsdaFood[] {
 export function cleanQuery(value: string | null): string | null {
   const query = (value ?? "").trim().replace(/\s+/g, " ");
   return query.length >= 2 && query.length <= 60 ? query : null;
+}
+
+interface RawPortion {
+  amount?: number;
+  modifier?: string;
+  portionDescription?: string;
+  gramWeight?: number;
+  measureUnit?: { name?: string };
+}
+
+/** At most this many portions per food. */
+const MAX_PORTIONS = 6;
+
+// USDA writes portions three ways: SR Legacy as amount + modifier ("1" +
+// "container (8 oz)"), FNDDS as a description ("1 cup", with a numeric code as
+// modifier), Foundation as amount + unit ("1" + "cup").
+function portionLabel(raw: RawPortion): string | null {
+  const description = raw.portionDescription?.trim();
+  if (description) return /not specified/i.test(description) ? null : description;
+  if (typeof raw.amount !== "number" || raw.amount <= 0) return null;
+  const unit = raw.measureUnit?.name && raw.measureUnit.name !== "undetermined" ? raw.measureUnit.name : "";
+  const modifier = raw.modifier && !/^\d+$/.test(raw.modifier.trim()) ? raw.modifier.trim() : "";
+  const words = [unit, modifier].filter(Boolean).join(" ");
+  return words ? `${formatQuantity(raw.amount)} ${words}` : null;
+}
+
+/** The household portions in a food-details response, smallest first, without repeats. */
+export function portionsFrom(food: unknown): Portion[] {
+  const raw = (food as { foodPortions?: unknown })?.foodPortions;
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const portions: Portion[] = [];
+  for (const item of raw as RawPortion[]) {
+    const label = portionLabel(item ?? {});
+    const grams = item?.gramWeight;
+    if (!label || label.length > 40 || typeof grams !== "number" || grams <= 0) continue;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    portions.push({ label, grams });
+  }
+  return portions.sort((a, b) => a.grams - b.grams).slice(0, MAX_PORTIONS);
 }

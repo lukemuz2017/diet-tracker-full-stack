@@ -11,13 +11,13 @@ import { addFoods, removeSavedFood, saveUsdaFoods, setDayComplete } from "@/lib/
 import { formatAmount, multipleFor, quantityFor } from "@/lib/amounts";
 import { formatDay } from "@/lib/dates";
 import { warningsFor } from "@/lib/diet";
-import { CATEGORY_ORDER, FOODS, amountFor, categoryOf } from "@/lib/foods";
+import { CATEGORY_ORDER, FOODS, amountFor, categoryOf, rememberPortions, startingMultiple } from "@/lib/foods";
 import { formatValue, recentFoods, totalsFor } from "@/lib/log";
 import { MEALS, type Meal } from "@/lib/meals";
 import type { Nutrients } from "@/lib/nutrients";
 import { dietOf, type Diet } from "@/lib/profile";
 import type { SavedData, TrayItem } from "@/lib/storage";
-import type { UsdaFood } from "@/lib/usda";
+import type { Portion, UsdaFood } from "@/lib/usda";
 
 interface Choice {
   key: string;
@@ -36,12 +36,15 @@ const NO_DIET: Pick<Diet, "allergies" | "pattern"> = { allergies: [], pattern: "
 
 function toOption(choice: Choice, diet: Pick<Diet, "allergies" | "pattern">): SearchOption {
   const spec = amountFor(choice.foodId);
-  const kcal = choice.perServing.calories;
+  // A food with household portions (USDA) shows the portion it starts at;
+  // others show their standard serving.
+  const multiple = spec.named?.length ? choice.multiple : 1;
+  const kcal = choice.perServing.calories !== undefined ? choice.perServing.calories * multiple : undefined;
   const warning = warningsFor(choice.foodId, diet).join(" · ");
   return {
     key: choice.key,
     name: choice.name,
-    detail: `${formatAmount(spec, spec.base)}${kcal !== undefined ? ` · ${formatValue(kcal)} kcal` : ""}`,
+    detail: `${formatAmount(spec, quantityFor(spec, multiple))}${kcal !== undefined ? ` · ${formatValue(kcal)} kcal` : ""}`,
     warning: warning || undefined,
   };
 }
@@ -113,7 +116,12 @@ export function AddFoodPanel({
     saveUsdaFoods(
       staged
         .filter((item) => item.foodId?.startsWith("usda:"))
-        .map((item) => ({ fdcId: Number(item.foodId!.slice("usda:".length)), name: item.name, per100g: item.perServing })),
+        .map((item) => ({
+          fdcId: Number(item.foodId!.slice("usda:".length)),
+          name: item.name,
+          per100g: item.perServing,
+          portions: usdaFound.current.get(item.foodId!)?.portions,
+        })),
     );
     const where = `${isToday ? "" : `${formatDay(date)} `}${mealName}`;
     const [only] = staged;
@@ -144,7 +152,7 @@ export function AddFoodPanel({
       name: food.name,
       foodId: usdaId(food.fdcId),
       perServing: food.per100g,
-      multiple: lastMultiple(usdaId(food.fdcId)),
+      multiple: recent.find((item) => item.foodId === usdaId(food.fdcId))?.lastServings ?? startingMultiple(food.portions),
     }));
 
   const foodChoices: Choice[] = [
@@ -158,8 +166,9 @@ export function AddFoodPanel({
     ...savedChoices,
   ];
 
-  // USDA results seen in this pop-up, so a pick can be staged by its key.
-  const usdaFound = useRef(new Map<string, Choice>());
+  // USDA results seen in this pop-up, so a pick can be staged by its key
+  // and saved with its portions.
+  const usdaFound = useRef(new Map<string, Choice & { portions?: Portion[] }>());
   // Made once, so an in-flight search isn't restarted on every re-render.
   // Results already saved are dropped by FoodSearch (same key as the saved
   // food listed above them); USDA foods carry no diet tags, so no warnings.
@@ -171,8 +180,15 @@ export function AddFoodPanel({
       search: async (query, signal) => {
         const foods = await fetchUsda(query, signal);
         return foods.map((food) => {
-          const choice: Choice = { key: usdaId(food.fdcId), name: food.name, foodId: usdaId(food.fdcId), perServing: food.per100g, multiple: 1 };
-          usdaFound.current.set(choice.key, choice);
+          const choice: Choice = {
+            key: usdaId(food.fdcId),
+            name: food.name,
+            foodId: usdaId(food.fdcId),
+            perServing: food.per100g,
+            multiple: startingMultiple(food.portions),
+          };
+          rememberPortions(choice.key, food.portions);
+          usdaFound.current.set(choice.key, { ...choice, portions: food.portions });
           return toOption(choice, NO_DIET);
         });
       },
