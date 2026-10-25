@@ -80,13 +80,6 @@ export function ProfileView() {
           </Card>
         ))}
 
-        <p className="text-sm text-muted">
-          Estimates, not medical advice.{" "}
-          <Link href="/faq" className="font-bold text-leaf underline underline-offset-[3px]">
-            How the ranges and averages work
-          </Link>
-        </p>
-
         {!firstVisit && (
           <ButtonLink href="/log" className="min-h-12 self-start px-7 text-[17px]">
             Back to your dashboard
@@ -124,7 +117,6 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
           {/* The same badge as the header's account button, with the name from Clerk. */}
           <InitialsBadge initials={initialsOf(user?.firstName, user?.lastName, email)} photo={user?.hasImage ? user.imageUrl : null} size="large" />
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Your details</p>
             <h2 id="details-title" className="truncate font-display text-xl font-extrabold">
               {user?.fullName || handleOf(email) || "Your details"}
             </h2>
