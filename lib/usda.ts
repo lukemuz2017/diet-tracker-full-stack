@@ -37,7 +37,6 @@ const NUTRIENT_IDS: Record<number, NutrientKey> = {
   1114: "vitaminD",
   1090: "magnesium",
   1093: "sodium",
-  1258: "saturatedFat",
   1253: "cholesterol",
 };
 

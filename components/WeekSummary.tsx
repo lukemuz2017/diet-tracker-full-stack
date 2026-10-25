@@ -1,5 +1,6 @@
 "use client";
 
+import { PlusIcon } from "@/components/ui/icons";
 import { dietOf, type Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { SUGGESTION_DAYS, summarize } from "@/lib/suggestions";
@@ -15,7 +16,24 @@ const TONE = { good: "border-leaf", low: "border-lemon", high: "border-carrot", 
 // three tiles: going well, could
 // improve, and a bigger-picture habit (lib/suggestions.ts). One card, to keep the
 // page short.
-export function WeekSummary({ data, profile, today, end, range }: { data: SavedData; profile: Profile; today: string; end: string; range: string }) {
+export function WeekSummary({
+  data,
+  profile,
+  today,
+  end,
+  range,
+  addLabel,
+  onAdd,
+}: {
+  data: SavedData;
+  profile: Profile;
+  today: string;
+  end: string;
+  range: string;
+  /** "Add food", or "Add food · 2 picked" while foods wait on the list. */
+  addLabel: string;
+  onAdd: () => void;
+}) {
   const targets = withUsual(computeTargets(profile, today), data, end);
   const window = summarizeWindow(data, end, targets);
   const { verdict, tiles, daysToGo } = summarize(window, targets, data.entries, dietOf(profile));
@@ -25,6 +43,16 @@ export function WeekSummary({ data, profile, today, end, range }: { data: SavedD
       <div>
         <h1 className="font-display text-[34px] font-extrabold leading-none tracking-tight">Dashboard</h1>
         <p className="mt-1 text-sm text-muted">{range}</p>
+        {/* Adding food isn't only for today (the pop-up has a day picker), so it lives with the page title. */}
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={onAdd}
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-leaf px-5 font-display text-[15px] font-extrabold text-white hover:bg-leaf-dark"
+        >
+          <PlusIcon width={18} height={18} strokeWidth={2.25} />
+          {addLabel}
+        </button>
       </div>
 
       {verdict === "waiting" ? (

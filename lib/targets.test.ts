@@ -153,10 +153,8 @@ test("magnesium follows the RDA by sex and age, and pregnancy by age band", () =
   assert.equal(computeTargets({ ...man, sex: "nonbinary" }, TODAY).magnesium.min, 400);
 });
 
-test("sodium and saturated fat are limits: 2,300 mg, and 10% of calories", () => {
+test("sodium is a limit: under 2,300 mg", () => {
   assert.deepEqual(computeTargets(man, TODAY).sodium, { kind: "max", max: 2300 });
-  // 2,930 kcal × 10% ÷ 9 kcal per gram = 32.6 g
-  assert.deepEqual(computeTargets(man, TODAY).saturatedFat, { kind: "max", max: 33 });
   assert.equal(formatTarget("sodium", computeTargets(man, TODAY).sodium), "under 2,300 mg");
 });
 

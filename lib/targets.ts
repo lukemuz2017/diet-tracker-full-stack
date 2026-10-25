@@ -157,9 +157,8 @@ const band = (teen: number, young: number, mid: number, older: number, oldest: n
 });
 
 // Sodium: the Dietary Guidelines' limit (the National Academies' Chronic Disease
-// Risk Reduction level) for everyone 14 and over. Saturated fat: under 10% of calories.
+// Risk Reduction level) for everyone 14 and over.
 export const SODIUM_LIMIT_MG = 2300;
-export const SATURATED_FAT_SHARE = 0.1;
 
 // RDA, or AI where there is no RDA (potassium), per day.
 const MICRONUTRIENTS: Record<"potassium" | "calcium" | "iron" | "vitaminA" | "vitaminC" | "vitaminD" | "magnesium", { male: ByBand; female: ByBand }> = {
@@ -268,7 +267,6 @@ export function computeTargets(profile: Profile, today: string): Targets {
     vitaminD: micronutrient("vitaminD", profile, age),
     magnesium: micronutrient("magnesium", profile, age),
     sodium: { kind: "max", max: SODIUM_LIMIT_MG },
-    saturatedFat: { kind: "max", max: Math.round((kcal * SATURATED_FAT_SHARE) / 9) },
     // Filled in from the person's history by withUsual (lib/usual.ts).
     cholesterol: { kind: "usual" },
   };
@@ -344,8 +342,6 @@ export function explainTarget(key: NutrientKey, profile: Profile, targets: Targe
       return `${age <= 18 ? "25" : "20"}–35% of your ${kcalText}, at 9 kcal per gram.`;
     case "sodium":
       return `Under ${formatAmount(SODIUM_LIMIT_MG)} mg a day, the limit in the Dietary Guidelines for Americans. Most sodium comes from packaged, canned and restaurant food, not the salt shaker. If your doctor gave you a lower limit, follow that.`;
-    case "saturatedFat":
-      return `Under 10% of your ${kcalText}, at 9 kcal per gram, so under ${target.max} g (the Dietary Guidelines for Americans). Saturated fat is mostly in butter, fatty meat, cheese and some oils.`;
     case "cholesterol":
       return `Current guidelines no longer set a daily limit (the old 300 mg cap was dropped in 2015), so this compares you with yourself: your average is flagged when it runs more than ${USUAL_MARGIN * 100}% above your usual, which is your average over up to the 3 weeks before. It needs at least ${USUAL_MIN_DAYS} complete days of history first.`;
     case "fiber":

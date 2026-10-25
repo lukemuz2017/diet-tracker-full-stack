@@ -1,4 +1,4 @@
-// The fifteen tracked nutrients (flows.md: What's tracked).
+// The fourteen tracked nutrients (flows.md: What's tracked).
 
 export type NutrientKey =
   | "calories"
@@ -14,7 +14,6 @@ export type NutrientKey =
   | "vitaminD"
   | "magnesium"
   | "sodium"
-  | "saturatedFat"
   | "cholesterol";
 
 export type NutrientUnit = "kcal" | "g" | "mg" | "mcg";
@@ -36,7 +35,6 @@ export const NUTRIENTS: Record<NutrientKey, { label: string; unit: NutrientUnit 
   vitaminD: { label: "Vitamin D", unit: "mcg" },
   magnesium: { label: "Magnesium", unit: "mg" },
   sodium: { label: "Sodium", unit: "mg" },
-  saturatedFat: { label: "Saturated fat", unit: "g" },
   cholesterol: { label: "Cholesterol", unit: "mg" },
 };
 
@@ -59,7 +57,6 @@ export const WHY: Record<NutrientKey, string> = {
   vitaminC: "Vitamin C helps wounds heal, supports your immune system and helps you absorb iron from plant foods.",
   vitaminD: "Vitamin D helps your body absorb calcium for strong bones. Sunlight makes it too, so food is only part of the picture.",
   sodium: "Sodium, mostly from salt, helps balance fluids in your body, but a lot of it over time raises blood pressure.",
-  saturatedFat: "Saturated fat, mostly from butter, fatty meat and cheese, raises LDL (“bad”) cholesterol when it makes up a big part of your diet.",
   cholesterol: "Cholesterol is a fat your body makes and also gets from animal foods. For most people the saturated fat that comes with it matters more than the cholesterol itself, so this one is compared with your own usual.",
 };
 
@@ -67,7 +64,7 @@ export const WHY: Record<NutrientKey, string> = {
 export const NUTRIENT_GROUPS: { title: string; keys: NutrientKey[] }[] = [
   { title: "Energy and macros", keys: ["calories", "protein", "carbs", "fat"] },
   { title: "Get enough of", keys: ["fiber", "potassium", "calcium", "iron", "magnesium", "vitaminA", "vitaminC", "vitaminD"] },
-  // Less is better: sodium and saturated fat have official limits; cholesterol has
-  // none, so it's compared with the person's own usual (lib/usual.ts).
-  { title: "Keep under", keys: ["sodium", "saturatedFat", "cholesterol"] },
+  // Less is better: sodium has an official limit; cholesterol has none, so it's
+  // compared with the person's own usual (lib/usual.ts).
+  { title: "Keep under", keys: ["sodium", "cholesterol"] },
 ];

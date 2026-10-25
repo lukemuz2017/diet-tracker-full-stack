@@ -91,8 +91,16 @@ export function FoodLog() {
       ) : (
         <>
           <DashboardStickers />
-          <WeekSummary data={data} profile={data.profile} today={today} end={end} range={`${formatShortDay(start)} – ${formatShortDay(end)}`} />
-          <TodayStrip data={data} today={today} addLabel={addLabel} onAdd={() => openAdd(today)} onOpen={() => setOpenDay(today)} />
+          <WeekSummary
+            data={data}
+            profile={data.profile}
+            today={today}
+            end={end}
+            range={`${formatShortDay(start)} – ${formatShortDay(end)}`}
+            addLabel={addLabel}
+            onAdd={() => openAdd(today)}
+          />
+          <TodayStrip data={data} today={today} onOpen={() => setOpenDay(today)} />
         </>
       )}
 
@@ -189,22 +197,10 @@ function DayPicker({ date, today, earliest, onPick }: { date: string; today: str
 }
 
 /**
- * Today, above the week: calories so far, status, Add food and Mark complete.
+ * Today, above the week: calories so far, status, See meals and Mark complete.
  * Today isn't in the ribbons until it's complete, so this is where it lives.
  */
-function TodayStrip({
-  data,
-  today,
-  addLabel,
-  onAdd,
-  onOpen,
-}: {
-  data: SavedData;
-  today: string;
-  addLabel: string;
-  onAdd: () => void;
-  onOpen: () => void;
-}) {
+function TodayStrip({ data, today, onOpen }: { data: SavedData; today: string; onOpen: () => void }) {
   const { totals, foods } = totalsFor(data.entries.filter((entry) => entry.date === today));
   const marked = data.completeDays.includes(today);
   const chip = STATE_CHIP[dayState(foods, marked)];
@@ -235,15 +231,6 @@ function TodayStrip({
             </button>
           </>
         )}
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          onClick={onAdd}
-          className="inline-flex min-h-12 items-center gap-2 rounded-full bg-leaf px-6 font-display text-[17px] font-extrabold text-white hover:bg-leaf-dark"
-        >
-          <PlusIcon width={20} height={20} strokeWidth={2.25} />
-          {addLabel}
-        </button>
       </div>
     </section>
   );

@@ -273,8 +273,12 @@ function NutrientDetail({
 
   return (
     <div className="mb-2 flex flex-col gap-4 rounded-xl bg-celery/60 p-4">
-      <p className="max-w-[60ch] text-sm text-muted">{WHY[nutrientKey]}</p>
       <NutrientBar nutrient={nutrientKey} target={targets[nutrientKey]} value={summary.counted > 0 ? summary.averages[nutrientKey] : undefined} />
+      {/* What the nutrient is and why it matters, labeled, right under its bar. */}
+      <div className="flex flex-col gap-1">
+        <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Why it matters</h4>
+        <p className="max-w-[60ch] text-sm text-muted">{WHY[nutrientKey]}</p>
+      </div>
       <table className="w-full text-sm">
         <caption className="sr-only">{label} each day and the food that gave the most. Grayed days aren’t marked complete, so they’re left out of the average.</caption>
         <thead>

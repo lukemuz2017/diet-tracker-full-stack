@@ -102,9 +102,9 @@ function fill(tip: TipText | string, diet: Pick<Diet, "allergies" | "pattern">):
 }
 
 /** Which on-track nutrient to praise first: the harder wins lead. */
-const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein", "carbs", "fat", "calories", "sodium", "saturatedFat", "cholesterol"];
+const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein", "carbs", "fat", "calories", "sodium", "cholesterol"];
 /** Staying under a limit or near maintenance is good, but no single food earns the credit. */
-const NO_SOURCE: NutrientKey[] = ["calories", "sodium", "saturatedFat", "cholesterol"];
+const NO_SOURCE: NutrientKey[] = ["calories", "sodium", "cholesterol"];
 
 export type TileKind = "good" | "improve" | "big";
 
@@ -173,15 +173,6 @@ const HABITS: { title: string; tip: TipText | string; keys: (low: Set<NutrientKe
     title: "Go easy on salt",
     tip: "Packaged and restaurant foods carry most of the salt. Try cooking one more meal at home, and rinse canned **beans** and **vegetables**.",
     keys: (_, high) => (high.has("sodium") ? ["sodium"] : []),
-  },
-  {
-    title: "Swap some saturated fat",
-    tip: {
-      text: "Try {list} in place of some butter, fatty meat or full-fat cheese.",
-      examples: [["olive oil"], ["fish", "fish"], ["beans"], ["nuts", "treeNuts"], ["avocado"]],
-      fallback: "Try olive oil, beans or avocado in place of some butter, fatty meat or full-fat cheese.",
-    },
-    keys: (_, high) => (high.has("saturatedFat") ? ["saturatedFat"] : []),
   },
   {
     title: "Protein at each meal",

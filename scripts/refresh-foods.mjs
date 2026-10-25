@@ -1,4 +1,4 @@
-// Adds the newer nutrients (vitamin D, magnesium, sodium, saturated fat,
+// Adds the newer nutrients (vitamin D, magnesium, sodium and
 // cholesterol) to the built-in foods in lib/foods-data.ts, from USDA
 // FoodData Central. Each food is looked up by its fdcId; USDA gives values per
 // 100 g, which are scaled to the food's serving (its `grams`).
@@ -10,7 +10,7 @@
 //
 // Without USDA_API_KEY it uses USDA's DEMO_KEY, which allows only a few
 // requests an hour. A nutrient USDA doesn't list for a food is left out
-// (unknown, not zero). Safe to run again: it only fills in these five.
+// (unknown, not zero). Safe to run again: it only fills in these four.
 import fs from "node:fs";
 
 const FILE = "lib/foods-data.ts";
@@ -20,10 +20,9 @@ const NEW = {
   1114: ["vitaminD", 1],
   1090: ["magnesium", 0],
   1093: ["sodium", 0],
-  1258: ["saturatedFat", 1],
   1253: ["cholesterol", 0],
 };
-const ORDER = ["vitaminD", "magnesium", "sodium", "saturatedFat", "cholesterol"];
+const ORDER = ["vitaminD", "magnesium", "sodium", "cholesterol"];
 
 const raw = fs.readFileSync(FILE, "utf8");
 const crlf = raw.includes("\r\n");
@@ -73,7 +72,7 @@ for (const { index, food } of foods) {
 
 let text = lines.join("\n");
 text = text.replace(/^\/\/ Common foods, per serving, from USDA FoodData Central \(SR Legacy, plus\n\/\/ FNDDS for mixed salad greens and cheese pizza\), fetched Oct 18, 2026\./m,
-  "// Common foods, per serving, from USDA FoodData Central (SR Legacy, plus\n// FNDDS for mixed salad greens and cheese pizza), fetched Oct 18, 2026; vitamin D,\n// magnesium, sodium, saturated fat and cholesterol added Oct 25, 2026\n// (scripts/refresh-foods.mjs).");
+  "// Common foods, per serving, from USDA FoodData Central (SR Legacy, plus\n// FNDDS for mixed salad greens and cheese pizza), fetched Oct 18, 2026; vitamin D,\n// magnesium, sodium and cholesterol added Oct 25, 2026\n// (scripts/refresh-foods.mjs).");
 fs.writeFileSync(FILE, crlf ? text.replace(/\n/g, "\r\n") : text);
 
 console.log(`Updated ${foods.length} foods in ${FILE}.`);
