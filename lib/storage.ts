@@ -1,12 +1,19 @@
-// Everything the app saves, in one versioned localStorage entry. Read only in
-// the browser: the server snapshot is null, so pages render a neutral state
-// until the saved data is known (and never read it while prerendering).
+// Everything a person saves, kept in Supabase (AGENTS.md, "Data model") and
+// mirrored in memory so screens read it synchronously. A change shows at once
+// and is written in the background; if a write fails, the change is undone by
+// reloading from the database. Read only in the browser: the server snapshot
+// is null, so pages render a neutral state until the data has loaded (and
+// never read it while prerendering).
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useSyncExternalStore } from "react";
 import type { Meal } from "./meals.ts";
 import type { Nutrients } from "./nutrients.ts";
-import { isProfile, type Profile } from "./profile.ts";
+import type { Profile } from "./profile.ts";
 import type { Recipe } from "./recipe.ts";
+import { changesBetween, dataFromRows, hasChanges, type Changes } from "./rows.ts";
+import { supabaseFor } from "./supabase.ts";
+import { showToast } from "./toast.ts";
 
 export interface Entry {
   id: string;
@@ -20,6 +27,8 @@ export interface Entry {
   foodId?: string;
   /** Totals for this entry (servings already applied). */
   nutrients: Nutrients;
+  /** Added by "Load a sample 2 weeks" (lib/sample.ts). */
+  sample?: boolean;
   createdAt: string;
 }
 
@@ -32,79 +41,121 @@ export interface SavedData {
   recipes: Recipe[];
 }
 
-const KEY = "diet-tracker:v1";
-const EMPTY: SavedData = { version: 1, profile: null, entries: [], completeDays: [], recipes: [] };
+export type SyncStatus = "signed-out" | "loading" | "ready" | "error";
 
-let cache: SavedData | null = null;
+let state: { status: SyncStatus; data: SavedData | null } = { status: "signed-out", data: null };
+let db: SupabaseClient | null = null;
+let userId: string | null = null;
+/** Writes run one after another, so an Undo never overtakes what it undoes. */
+let writes: Promise<void> = Promise.resolve();
 const listeners = new Set<() => void>();
 
-function parse(raw: string | null): SavedData {
-  if (!raw) return EMPTY;
-  try {
-    const value = JSON.parse(raw);
-    if (value && typeof value === "object" && value.version === 1) {
-      return {
-        version: 1,
-        // A profile saved before a shape change is dropped, so setup runs again.
-        profile: isProfile(value.profile) ? value.profile : null,
-        entries: Array.isArray(value.entries) ? value.entries : [],
-        completeDays: Array.isArray(value.completeDays) ? value.completeDays : [],
-        recipes: Array.isArray(value.recipes) ? value.recipes : [],
-      };
-    }
-  } catch {
-    // Corrupt data: start fresh rather than crash.
-  }
-  return EMPTY;
-}
-
-function read(): SavedData {
-  if (cache === null) {
-    try {
-      cache = parse(window.localStorage.getItem(KEY));
-    } catch {
-      cache = EMPTY;
-    }
-  }
-  return cache;
-}
-
-function notify() {
+function setState(next: typeof state) {
+  state = next;
   for (const listener of listeners) listener();
-}
-
-function onStorage(event: StorageEvent) {
-  // Another tab changed the data.
-  if (event.key === KEY) {
-    cache = null;
-    notify();
-  }
 }
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
-  if (listeners.size === 1) window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(listener);
-    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
   };
 }
 
-/** Saved data, or null while it isn't known yet (server render, hydration). */
+/** Saved data, or null while it isn't known yet (signed out, loading, server render). */
 export function useSavedData(): SavedData | null {
-  return useSyncExternalStore(subscribe, read, () => null);
+  return useSyncExternalStore(subscribe, () => state.data, () => null);
 }
 
-/** Applies a change and saves it. Returns false if the browser refused to store it. */
-export function updateData(change: (data: SavedData) => SavedData): boolean {
-  cache = change(read());
-  notify();
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(cache));
-    return true;
-  } catch {
-    return false;
+export function useSyncStatus(): SyncStatus {
+  return useSyncExternalStore(subscribe, () => state.status, () => "loading");
+}
+
+/**
+ * Called by components/DataSync.tsx whenever the Clerk user changes. A new
+ * user starts from nothing, so one person's data never shows for another.
+ */
+export function connect(id: string | null, getToken: () => Promise<string | null>) {
+  if (id === userId) return;
+  userId = id;
+  writes = Promise.resolve();
+  if (!id) {
+    db = null;
+    setState({ status: "signed-out", data: null });
+    return;
   }
+  db = supabaseFor(getToken);
+  void load();
+}
+
+/** Loads the signed-in person's data again (after an error, or a failed save). */
+export async function load() {
+  const client = db;
+  const id = userId;
+  if (!client || !id) return;
+  setState({ status: "loading", data: null });
+  try {
+    // No user_id filter on purpose: row-level security returns only the
+    // signed-in person's rows, and the two-user test checks exactly that.
+    const [profile, entries, days, recipes] = await Promise.all([
+      client.from("profiles").select("units, height_cm, weight_kg, birth_date, sex, activity, allergies, pattern, life_stage").maybeSingle(),
+      client.from("log_entries").select("id, date, meal, name, amount, source, nutrients, is_sample, created_at").order("created_at"),
+      client.from("complete_days").select("date").order("date"),
+      client.from("my_foods").select("id, kind, name, nutrients, servings, ingredients, created_at").eq("kind", "recipe").order("created_at"),
+    ]);
+    if (id !== userId) return; // Signed out or switched while loading.
+    const error = profile.error ?? entries.error ?? days.error ?? recipes.error;
+    if (error) throw error;
+    setState({
+      status: "ready",
+      data: dataFromRows({ profile: profile.data, entries: entries.data ?? [], days: days.data ?? [], recipes: recipes.data ?? [] }),
+    });
+  } catch {
+    if (id === userId) setState({ status: "error", data: null });
+  }
+}
+
+async function write(client: SupabaseClient, changes: Changes) {
+  const { profile, entries, days, recipes } = changes;
+  const requests: PromiseLike<{ error: unknown }>[] = [];
+  // Deletes always carry a filter (Supabase refuses a DELETE without one);
+  // row-level security limits every request to the person's own rows.
+  if (profile === "delete") requests.push(client.from("profiles").delete().not("user_id", "is", null));
+  else if (profile) requests.push(client.from("profiles").upsert({ ...profile, updated_at: new Date().toISOString() }));
+  if (entries.upsert.length) requests.push(client.from("log_entries").upsert(entries.upsert));
+  if (entries.delete.length) requests.push(client.from("log_entries").delete().in("id", entries.delete));
+  if (days.add.length) {
+    requests.push(
+      client.from("complete_days").upsert(days.add.map((date) => ({ date })), { onConflict: "user_id,date", ignoreDuplicates: true }),
+    );
+  }
+  if (days.remove.length) requests.push(client.from("complete_days").delete().in("date", days.remove));
+  if (recipes.upsert.length) requests.push(client.from("my_foods").upsert(recipes.upsert));
+  if (recipes.delete.length) requests.push(client.from("my_foods").delete().in("id", recipes.delete));
+  const results = await Promise.all(requests);
+  const failed = results.find((result) => result.error);
+  if (failed) throw failed.error;
+}
+
+/** Applies a change on screen and saves it. Returns false if there's nothing loaded to change. */
+export function updateData(change: (data: SavedData) => SavedData): boolean {
+  const before = state.data;
+  const client = db;
+  const id = userId;
+  if (!before || !client) return false;
+  const after = change(before);
+  setState({ ...state, data: after });
+  const changes = changesBetween(before, after);
+  if (hasChanges(changes)) {
+    writes = writes
+      .then(() => write(client, changes))
+      .catch(() => {
+        if (id !== userId) return;
+        showToast("Couldn’t save that change, so it was undone. Check your connection and try again.");
+        void load();
+      });
+  }
+  return true;
 }
 
 const TRAY_KEY = "diet-tracker:tray";
@@ -141,14 +192,3 @@ export function writeTray(items: TrayItem[]) {
   }
 }
 
-/** Whether this browser lets the app keep data (private windows may not). */
-export function canSave(): boolean {
-  try {
-    const probe = `${KEY}:probe`;
-    window.localStorage.setItem(probe, "1");
-    window.localStorage.removeItem(probe);
-    return true;
-  } catch {
-    return false;
-  }
-}

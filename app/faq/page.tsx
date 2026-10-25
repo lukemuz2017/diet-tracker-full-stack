@@ -22,7 +22,7 @@ const SECTIONS: { title: string; tone: string; questions: { q: string; a: ReactN
       },
       {
         q: "Where is my data saved?",
-        a: "Only in this browser, on this device. There’s no account and nothing is sent anywhere. Clearing your browser data erases it, and another device or browser starts fresh.",
+        a: "In your account, in our database. Each thing you save is tied to your account, and the database only ever hands it back to you: no one else who signs in can see it. Sign in on any device and it’s all there.",
       },
     ],
   },

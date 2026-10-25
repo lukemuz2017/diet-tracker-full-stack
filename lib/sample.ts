@@ -1,6 +1,6 @@
 // Example logs for showing the app: two weeks of ordinary meals made from the
-// built-in foods. Sample entries have ids starting "sample-", so they can be
-// cleared without touching anything the person logged.
+// built-in foods. Sample entries are flagged `sample` (the is_sample column),
+// so they can be cleared without touching anything the person logged.
 
 import { addDays } from "./dates.ts";
 import { amountFor, findFood } from "./foods.ts";
@@ -8,7 +8,6 @@ import { scaleNutrients } from "./log.ts";
 import { MEALS } from "./meals.ts";
 import type { Entry, SavedData } from "./storage.ts";
 
-export const SAMPLE_PREFIX = "sample-";
 export const SAMPLE_DAYS = 15;
 /** Roughly what the menus below add up to on a full day. */
 const MENU_CALORIES = 2300;
@@ -89,7 +88,8 @@ export function sampleEntries(data: SavedData, today: string, calories = MENU_CA
         const food = findFood(foodId);
         if (!food) throw new Error(`Unknown sample food: ${foodId}`);
         entries.push({
-          id: `${SAMPLE_PREFIX}${date}-${n}`,
+          id: crypto.randomUUID(),
+          sample: true,
           date,
           meal,
           name: food.name,
@@ -105,7 +105,7 @@ export function sampleEntries(data: SavedData, today: string, calories = MENU_CA
 }
 
 export function isSample(entry: Entry): boolean {
-  return entry.id.startsWith(SAMPLE_PREFIX);
+  return entry.sample === true;
 }
 
 /** Adds the sample meals and marks those days complete (all but the light day). */

@@ -35,7 +35,7 @@ export function SetupScreen() {
         description={
           editing
             ? "Change anything and save. Your ranges update to match."
-            : "Six quick questions, plus optional diet notes. We use them only to estimate your daily ranges and tailor suggestions, and they stay on this device."
+            : "Six quick questions, plus optional diet notes. We use them only to estimate your daily ranges and tailor suggestions, and only your account can see them."
         }
       />
       {/* The form waits for saved data so editing starts prefilled. */}
@@ -97,7 +97,7 @@ function BirthDateField({
         <label htmlFor="setup-birth" className="text-[15px] font-bold">
           Date of birth
         </label>
-        <InfoButton label="About date of birth">Used only to work out your age. Stays on this device.</InfoButton>
+        <InfoButton label="About date of birth">Used only to work out your age. Only your account can see it.</InfoButton>
       </span>
       <div
         className={`field-box flex h-12 items-center rounded-field bg-white pl-3.5 ${error ? "border-2 border-tomato" : "border-[1.5px] border-field"}`}
@@ -235,7 +235,7 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
       <TextField
         id="setup-weight"
         label="Weight"
-        info="Used only to estimate your needs. Stays on this device."
+        info="Used only to estimate your needs. Only your account can see it."
         unit={us ? { short: "lb", long: "pounds" } : { short: "kg", long: "kilograms" }}
         inputMode="decimal"
         autoComplete="off"
@@ -249,7 +249,7 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
       <ChoiceField
         name="sex"
         legend="Sex"
-        info="Calorie and vitamin estimates differ by sex; non-binary uses a blend of both. Stays on this device."
+        info="Calorie and vitamin estimates differ by sex; non-binary uses a blend of both. Only your account can see it."
         options={SEX_OPTIONS}
         value={values.sex}
         onChange={(sex) => set({ sex })}

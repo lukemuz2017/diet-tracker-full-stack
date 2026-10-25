@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AccountButtons } from "@/components/AccountButtons";
 import { SiteNav } from "@/components/SiteNav";
-import { StorageBanner } from "@/components/StorageBanner";
+import { DataSync } from "@/components/DataSync";
 import { Toast } from "@/components/Toast";
 import "./globals.css";
 
@@ -56,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           >
             Skip to content
           </a>
-          <StorageBanner />
+          <DataSync />
           <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
             <Link href="/" className="flex items-center gap-2.5 rounded-full">
               <span
