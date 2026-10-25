@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { WeekCalendar } from "@/components/WeekCalendar";
 import { PageHeader } from "@/components/ui/Card";
@@ -154,6 +154,9 @@ function BirthDateField({
   );
 }
 
+/** Profile's "Add your eating pattern…" link opens the form here: /setup#diet-notes. */
+export const DIET_NOTES_ID = "diet-notes";
+
 /** Two related fields side by side from sm up; one column on phones. */
 const PAIR = "grid items-start gap-5 sm:grid-cols-2 sm:gap-4";
 
@@ -174,6 +177,15 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
   const nameErrors = submitted ? validateName(firstName, lastName) : {};
 
   const set = (patch: Partial<SetupValues>) => setValues((current) => ({ ...current, ...patch }));
+
+  // The form appears after the data loads, too late for the browser's own jump
+  // to #diet-notes, so it scrolls there itself and focuses the first choice.
+  useEffect(() => {
+    if (window.location.hash !== `#${DIET_NOTES_ID}`) return;
+    const section = document.getElementById(DIET_NOTES_ID);
+    section?.scrollIntoView({ block: "start" });
+    section?.querySelector<HTMLInputElement>("input:checked, input")?.focus({ preventScroll: true });
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -328,7 +340,7 @@ export function SetupForm({ saved, today }: { saved: Profile | null; today: stri
         error={shown.activity}
       />
 
-      <fieldset className="flex flex-col gap-4 rounded-card border-[1.5px] border-line bg-paper p-4">
+      <fieldset id={DIET_NOTES_ID} className="flex scroll-mt-6 flex-col gap-4 rounded-card border-[1.5px] border-line bg-paper p-4">
         <legend className="float-left w-full font-display text-lg font-extrabold">
           Diet notes <span className="text-sm font-normal text-muted">(optional)</span>
         </legend>

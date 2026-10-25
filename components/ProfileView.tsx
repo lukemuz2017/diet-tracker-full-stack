@@ -6,6 +6,8 @@ import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { InitialsBadge } from "@/components/ui/InitialsBadge";
+import { PlusIcon } from "@/components/ui/icons";
+import { DIET_NOTES_ID } from "@/components/SetupForm";
 import { handleOf, initialsOf } from "@/lib/names";
 import { InfoButton } from "@/components/ui/InfoButton";
 import { formatValue } from "@/lib/log";
@@ -150,13 +152,14 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
       <div className="flex flex-col gap-2 border-t border-band pt-3">
         <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-muted">Diet notes</h3>
         {diet.pattern === "everything" && diet.allergies.length === 0 && diet.lifeStage === "none" ? (
-          <p className="text-sm">
-            None yet. Add your eating pattern{asksLifeStage(profile.sex) ? ", allergies or a pregnancy" : " or allergies"} in{" "}
-            <Link href="/setup" className="font-bold text-leaf underline underline-offset-[3px]">
-              Edit details
-            </Link>
-            .
-          </p>
+          // One link straight to the diet notes in Edit details.
+          <Link
+            href={`/setup#${DIET_NOTES_ID}`}
+            className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-full border-[1.5px] border-dashed border-leaf bg-paper px-4 text-sm font-bold text-leaf hover:bg-leaf-tint"
+          >
+            <PlusIcon width={16} height={16} strokeWidth={2.5} />
+            Add your eating pattern{asksLifeStage(profile.sex) ? ", allergies or a pregnancy" : " or allergies"}
+          </Link>
         ) : (
           <ul className="flex flex-wrap gap-2">
             {diet.pattern !== "everything" && (
