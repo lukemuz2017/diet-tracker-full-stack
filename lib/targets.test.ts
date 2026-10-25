@@ -132,3 +132,37 @@ test("a non-binary pregnancy uses the female equations and pregnancy values", ()
 test("a life stage saved on a male profile is ignored", () => {
   assert.equal(maintenanceCalories({ ...man, lifeStage: "pregnant2" }, TODAY), maintenanceCalories(man, TODAY));
 });
+
+test("vitamin D is 15 mcg to age 70 and 20 mcg after, for everyone", () => {
+  assert.equal(computeTargets(man, TODAY).vitaminD.min, 15);
+  assert.equal(computeTargets(woman, TODAY).vitaminD.min, 15);
+  const older = { ...man, birthDate: "1950-01-01" }; // 76
+  assert.equal(computeTargets(older, TODAY).vitaminD.min, 20);
+  assert.equal(computeTargets(man, TODAY).vitaminD.upper, 100);
+});
+
+test("magnesium follows the RDA by sex and age, and pregnancy by age band", () => {
+  assert.equal(computeTargets(man, TODAY).magnesium.min, 400); // man, 30
+  assert.equal(computeTargets(woman, TODAY).magnesium.min, 320); // woman, 40
+  const young = { ...woman, birthDate: "2000-01-01" }; // 26
+  assert.equal(computeTargets(young, TODAY).magnesium.min, 310);
+  assert.equal(computeTargets({ ...young, lifeStage: "pregnant2" }, TODAY).magnesium.min, 350);
+  assert.equal(computeTargets({ ...woman, lifeStage: "pregnant2" }, TODAY).magnesium.min, 360); // 40
+  assert.equal(computeTargets({ ...woman, lifeStage: "breastfeeding06" }, TODAY).magnesium.min, 320);
+  // Non-binary takes the higher of the two.
+  assert.equal(computeTargets({ ...man, sex: "nonbinary" }, TODAY).magnesium.min, 400);
+});
+
+test("sodium and saturated fat are limits: 2,300 mg, and 10% of calories", () => {
+  assert.deepEqual(computeTargets(man, TODAY).sodium, { kind: "max", max: 2300 });
+  // 2,930 kcal × 10% ÷ 9 kcal per gram = 32.6 g
+  assert.deepEqual(computeTargets(man, TODAY).saturatedFat, { kind: "max", max: 33 });
+  assert.equal(formatTarget("sodium", computeTargets(man, TODAY).sodium), "under 2,300 mg");
+});
+
+test("cholesterol has no fixed limit: it waits for the person's own history", () => {
+  const target = computeTargets(man, TODAY).cholesterol;
+  assert.deepEqual(target, { kind: "usual" });
+  assert.match(formatTarget("cholesterol", target), /once you've logged enough days/);
+  assert.equal(formatTarget("cholesterol", { kind: "usual", usual: 280, max: 336 }), "under 336 mg (20% above your usual 280 mg)");
+});

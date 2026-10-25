@@ -11,6 +11,7 @@ import { formatTarget, type Target } from "@/lib/targets";
 const FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carrot", unknown: "bg-track" } as const;
 
 function scaleMax(target: Target): number {
+  if (target.kind === "usual") return (target.max ?? 1) * 1.3;
   if (target.kind === "range") return target.max! * 1.25;
   if (target.kind === "min") return target.min! * 1.6;
   return target.max! * 1.3;
@@ -33,8 +34,9 @@ export function NutrientBar({
   const { label, unit } = NUTRIENTS[nutrient];
   const status = statusFor(nutrient, target, value);
   const max = scaleMax(target);
-  const bandStart = target.kind === "max" ? 0 : target.min!;
-  const bandEnd = target.kind === "min" ? max : target.max!;
+  const upperOnly = target.kind === "max" || target.kind === "usual";
+  const bandStart = upperOnly ? 0 : target.min!;
+  const bandEnd = target.kind === "min" ? max : (target.max ?? 0);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -54,8 +56,8 @@ export function NutrientBar({
           />
         )}
         {/* Tick marks at the edges of the target, visible over the fill. */}
-        {target.kind !== "max" && <div className="absolute inset-y-0 w-0.5 bg-soil shadow-[0_0_0_1px_var(--color-paper)]" style={{ left: pct(bandStart, max) }} />}
-        {target.kind !== "min" && <div className="absolute inset-y-0 w-0.5 bg-soil shadow-[0_0_0_1px_var(--color-paper)]" style={{ left: pct(bandEnd, max) }} />}
+        {!upperOnly && <div className="absolute inset-y-0 w-0.5 bg-soil shadow-[0_0_0_1px_var(--color-paper)]" style={{ left: pct(bandStart, max) }} />}
+        {target.kind !== "min" && target.max !== undefined && <div className="absolute inset-y-0 w-0.5 bg-soil shadow-[0_0_0_1px_var(--color-paper)]" style={{ left: pct(bandEnd, max) }} />}
       </div>
       <p className="text-[13px] text-muted">
         {value === undefined ? "No values yet" : `${formatValue(value)} ${unit} a day`} · target {formatTarget(nutrient, target)}

@@ -21,6 +21,7 @@ import { formatValue, totalsFor } from "@/lib/log";
 import { MEALS, byMeal, mealAt, type Meal } from "@/lib/meals";
 import { NUTRIENT_GROUPS, NUTRIENTS } from "@/lib/nutrients";
 import { readTray, useSavedData, writeTray, type Entry, type SavedData, type TrayItem } from "@/lib/storage";
+import { withUsual } from "@/lib/usual";
 import { computeTargets } from "@/lib/targets";
 import { useToday } from "@/lib/useToday";
 import { WINDOW_DAYS, currentWindowEnd, dayState, type DayState } from "@/lib/week";
@@ -285,7 +286,7 @@ function DayCard({
   const showDate = date === today || date === addDays(today, -1);
   const detailsId = useId();
   const showDetails = true;
-  const { wins, headsUp } = dayHighlights(totals, computeTargets(data.profile!, today));
+  const { wins, headsUp } = dayHighlights(totals, withUsual(computeTargets(data.profile!, today), data, date));
   const shortName = date === today ? "Today" : date === addDays(today, -1) ? "Yesterday" : weekdayName(date);
 
   return (

@@ -16,6 +16,8 @@ const TAG_TONES: Record<string, StickerTone> = {
   Iron: "kraft",
   "Vitamin A": "lemon",
   "Vitamin C": "leaf",
+  Magnesium: "leaf",
+  "Vitamin D": "kraft",
 };
 
 /** An amount picker in the food's own unit ("2 eggs", "½ cup", "3 oz"). */

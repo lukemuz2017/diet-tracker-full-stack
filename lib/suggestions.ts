@@ -75,6 +75,16 @@ const LOW_TIPS: Partial<Record<NutrientKey, TipText>> = {
     examples: [["oranges"], ["strawberries"], ["bell peppers"]],
     fallback: "Consider adding fruit or peppers this week.",
   },
+  vitaminD: {
+    text: "Consider adding {list} this week. Sunlight helps too.",
+    examples: [["salmon", "fish"], ["eggs", "eggs"], ["fortified milk", "dairy"], ["fortified soy milk", "soy"], ["mushrooms"]],
+    fallback: "Consider adding mushrooms or fortified foods this week. Sunlight helps too.",
+  },
+  magnesium: {
+    text: "Consider adding {list} this week.",
+    examples: [["nuts", "treeNuts"], ["beans"], ["whole grains"], ["leafy greens"], ["pumpkin seeds"]],
+    fallback: "Consider adding beans, whole grains or leafy greens this week.",
+  },
 };
 
 const NO_DIET: Pick<Diet, "allergies" | "pattern"> = { allergies: [], pattern: "everything" };
@@ -92,9 +102,9 @@ function fill(tip: TipText | string, diet: Pick<Diet, "allergies" | "pattern">):
 }
 
 /** Which on-track nutrient to praise first: the harder wins lead. */
-const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "calcium", "iron", "vitaminA", "protein", "carbs", "fat", "calories"];
+const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein", "carbs", "fat", "calories", "sodium", "saturatedFat", "cholesterol"];
 /** Staying under a limit or near maintenance is good, but no single food earns the credit. */
-const NO_SOURCE: NutrientKey[] = ["calories"];
+const NO_SOURCE: NutrientKey[] = ["calories", "sodium", "saturatedFat", "cholesterol"];
 
 export type TileKind = "good" | "improve" | "big";
 
@@ -158,6 +168,20 @@ const HABITS: { title: string; tip: TipText | string; keys: (low: Set<NutrientKe
     title: "Portion check",
     tip: "Try a slightly smaller portion at your biggest meal of the day.",
     keys: (_, high) => (high.has("calories") ? ["calories"] : []),
+  },
+  {
+    title: "Go easy on salt",
+    tip: "Packaged and restaurant foods carry most of the salt. Try cooking one more meal at home, and rinse canned **beans** and **vegetables**.",
+    keys: (_, high) => (high.has("sodium") ? ["sodium"] : []),
+  },
+  {
+    title: "Swap some saturated fat",
+    tip: {
+      text: "Try {list} in place of some butter, fatty meat or full-fat cheese.",
+      examples: [["olive oil"], ["fish", "fish"], ["beans"], ["nuts", "treeNuts"], ["avocado"]],
+      fallback: "Try olive oil, beans or avocado in place of some butter, fatty meat or full-fat cheese.",
+    },
+    keys: (_, high) => (high.has("saturatedFat") ? ["saturatedFat"] : []),
   },
   {
     title: "Protein at each meal",

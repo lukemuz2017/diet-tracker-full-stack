@@ -16,6 +16,11 @@ All targets are judged on the rolling 7-day average. W = body weight in kg; kcal
 | Iron | RDA: men 11 mg at 18, 8 mg at 19+; women 15 mg at 18, 18 mg at 19–50, 8 mg at 51+. UL 45 mg. | [S21] |
 | Vitamin A | RDA: men 900 mcg RAE, women 700 mcg RAE. The UL is for preformed vitamin A only, which the food data doesn't separate, so it isn't flagged. | [S22] |
 | Vitamin C | RDA: men 75 mg at 18, 90 mg at 19+; women 65 mg at 18, 75 mg at 19+. UL 1,800 mg at 18, 2,000 mg at 19+. | [S23] |
+| Vitamin D | RDA: 15 mcg (600 IU) from 14 to 70, 20 mcg (800 IU) from 71, the same for men and women, and 15 mcg in pregnancy and breastfeeding. UL 100 mcg (4,000 IU). Sunlight and supplements also supply it, so food alone can read low. | [S30] |
+| Magnesium | RDA: men 410 mg at 14–18, 400 mg at 19–30, 420 mg at 31+; women 360 / 310 / 320 mg. Pregnancy 400 / 350 / 360 mg; breastfeeding 360 / 310 / 320 mg (14–18 / 19–30 / 31+). The 350 mg UL applies to supplements only, so it isn't flagged. | [S31] |
+| Sodium | Under 2,300 mg a day (Dietary Guidelines; the National Academies' Chronic Disease Risk Reduction level) for everyone 14 and over. A limit, not a target to reach. | [S1], [S9] |
+| Saturated fat | Under 10% of calories (Dietary Guidelines), so kcal × 0.10 ÷ 9 g. A limit. | [S1] |
+| Cholesterol | No official daily limit: the 300 mg cap was dropped in the 2015 guidelines and not restored. The app compares the 7-day average with the person's own usual (their average over the 3 weeks before the window, from at least 7 complete days) and flags it when it runs more than 20% above. The 20% margin and the 3-week, 7-day rules are the app's own choices, not from a source. | [S1] |
 
 **Non-binary.** A 2022 Academy of Nutrition and Dietetics paper suggests expressing needs as a range between the female and male values, especially for energy [S24], [S25]. The app centers calories on the midpoint of the two equations, with a range spanning both. For minimums it uses the higher of the two values, so needs are covered.
 
@@ -41,13 +46,17 @@ The ⓘ text for calories says a doctor or midwife may suggest a different amoun
 
 **Considered but not used**
 - Mifflin-St Jeor × activity factors: Mifflin-St Jeor is still recommended for *resting* energy [S5], [S6], but the common 1.2–1.725 multipliers couldn't be traced to an authority.
-- Sodium as a tracked nutrient (under 2,300 mg, the National Academies and DGA limit [S1], [S9]): dropped at the student's request on 2026-10-20. The AHA's 1,500 mg ideal and WHO's 2,000 mg [S17], [S18] were already set aside.
+- Sodium (under 2,300 mg, the National Academies and DGA limit [S1], [S9]): dropped at the student's request on 2026-10-20 and brought back on 2026-10-25 with saturated fat, cholesterol, vitamin D and magnesium. The AHA's 1,500 mg ideal and WHO's 2,000 mg [S17], [S18] were set aside.
+- Mono- and polyunsaturated fat: USDA lists them, but there is no official number for either, so they aren't shown.
+- Added sugars: USDA doesn't list it for generic foods (0% of 564 sampled), so it can't be tracked from this data.
 - Smokers' +35 mg vitamin C (would need another setup question) and vegetarians' 1.8× iron (the eating pattern is now asked, but this isn't applied yet).
 - Added sugar is not tracked, by the student's choice.
 
 **Where sources disagree:** DGA 2025–2030 protein (1.2–1.6 g/kg) vs. the unchanged RDA (0.8 g/kg); Harvard criticizes the higher protein push [S26]. WHO suggests fat ≤30% and fiber ≥25 g [S18].
 
 ## Sources
+- [S30] NIH Office of Dietary Supplements, Vitamin D fact sheet: https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/
+- [S31] NIH Office of Dietary Supplements, Magnesium fact sheet: https://ods.od.nih.gov/factsheets/Magnesium-HealthProfessional/
 - [S1] Dietary Guidelines for Americans 2025–2030: https://cdn.realfood.gov/DGA.pdf
 - [S2] DGA 2025–2030 Scientific Report: https://cdn.realfood.gov/Scientific%20Report_508.pdf
 - [S3] National Academies, DRIs for Energy (2023): https://www.nationalacademies.org/read/26818/chapter/2

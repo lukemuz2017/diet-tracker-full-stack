@@ -4,7 +4,8 @@ import { MacroSplit, NutrientByDay } from "@/components/HistoryCharts";
 import { NutrientBar } from "@/components/NutrientBar";
 import { Card } from "@/components/ui/Card";
 import { formatDay } from "@/lib/dates";
-import { NUTRIENT_KEYS, statusFor } from "@/lib/log";
+import { SCORED_KEYS, statusFor } from "@/lib/log";
+import { withUsual } from "@/lib/usual";
 import { NUTRIENT_GROUPS } from "@/lib/nutrients";
 import { profileAge, type Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
@@ -79,11 +80,11 @@ export function WindowView({
   today: string;
   detail?: "bars" | "charts";
 }) {
-  const targets = computeTargets(profile, today);
+  const targets = withUsual(computeTargets(profile, today), data, end);
   const summary = summarizeWindow(data, end, targets);
   // Per day: the share of nutrients with a value that were in range.
   const dayShare = summary.days.map((day) => {
-    const known = NUTRIENT_KEYS.filter((key) => day.totals[key] !== undefined);
+    const known = SCORED_KEYS.filter((key) => day.totals[key] !== undefined);
     if (known.length === 0) return null;
     const inRange = known.filter((key) => statusFor(key, targets[key], day.totals[key]).kind === "in-range").length;
     return { inRange, known: known.length, share: inRange / known.length };

@@ -3,6 +3,7 @@
 import { dietOf, type Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { SUGGESTION_DAYS, summarize } from "@/lib/suggestions";
+import { withUsual } from "@/lib/usual";
 import { computeTargets } from "@/lib/targets";
 import { summarizeWindow } from "@/lib/week";
 
@@ -15,7 +16,7 @@ const TONE = { good: "border-leaf", low: "border-lemon", high: "border-carrot", 
 // improve, and a bigger-picture habit (lib/suggestions.ts). One card, to keep the
 // page short.
 export function WeekSummary({ data, profile, today, end, range }: { data: SavedData; profile: Profile; today: string; end: string; range: string }) {
-  const targets = computeTargets(profile, today);
+  const targets = withUsual(computeTargets(profile, today), data, end);
   const window = summarizeWindow(data, end, targets);
   const { verdict, tiles, daysToGo } = summarize(window, targets, data.entries, dietOf(profile));
 

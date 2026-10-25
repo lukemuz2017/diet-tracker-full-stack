@@ -11,13 +11,14 @@ import { DIET_NOTES_ID } from "@/components/SetupForm";
 import { handleOf, initialsOf } from "@/lib/names";
 import { InfoButton } from "@/components/ui/InfoButton";
 import { formatValue } from "@/lib/log";
-import { NUTRIENT_GROUPS, NUTRIENTS } from "@/lib/nutrients";
+import { NUTRIENT_GROUPS, NUTRIENTS, WHY } from "@/lib/nutrients";
 import { addDays, formatDay } from "@/lib/dates";
 import { ALLERGEN_OPTIONS, LIFE_STAGE_OPTIONS, PATTERN_OPTIONS, dietOf, profileFacts, type Profile, asksLifeStage } from "@/lib/profile";
 import { isSample, SAMPLE_DAYS, withSample, withoutSample } from "@/lib/sample";
 import { updateData, useSavedData, type SavedData } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 import { useToday } from "@/lib/useToday";
+import { withUsual } from "@/lib/usual";
 import { computeTargets, explainTarget, formatTarget, maintenanceCalories } from "@/lib/targets";
 
 // Profile: the details you entered, the maintenance estimate they give,
@@ -28,7 +29,7 @@ export function ProfileView() {
   if (!data?.profile || !today) return <PageHeader title="Profile" />;
 
   const { profile } = data;
-  const targets = computeTargets(profile, today);
+  const targets = withUsual(computeTargets(profile, today), data, today);
   const firstVisit = data.entries.length === 0;
 
   return (
@@ -69,7 +70,7 @@ export function ProfileView() {
                         <b>
                           {label}: {range} a day.
                         </b>{" "}
-                        {explainTarget(key, profile, targets, today)}
+                        {WHY[key]} {explainTarget(key, profile, targets, today)}
                       </InfoButton>
                     </span>
                     <span className="text-right tabular-nums">{range}</span>

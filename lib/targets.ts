@@ -5,7 +5,10 @@
 import { NUTRIENTS, type NutrientKey } from "./nutrients.ts";
 import { ACTIVITY_OPTIONS, dietOf, profileAge, type Activity, type LifeStage, type Profile } from "./profile.ts";
 
-export type TargetKind = "range" | "min" | "max";
+// "usual" is cholesterol's: no official limit, so a person's average is
+// compared with their own usual (lib/usual.ts). Until there's enough history,
+// it has no numbers and its status is unknown.
+export type TargetKind = "range" | "min" | "max" | "usual";
 
 export interface Target {
   kind: TargetKind;
@@ -15,7 +18,16 @@ export interface Target {
   max?: number;
   /** Tolerable Upper Intake Level, for "min" targets that have one. */
   upper?: number;
+  /** "usual" targets: the person's usual daily amount; `max` is a set share above it. */
+  usual?: number;
 }
+
+/** A "usual" target flags an average more than this share above the person's usual. */
+export const USUAL_MARGIN = 0.2;
+/** How many days before the window the person's usual is worked out from, at most. */
+export const USUAL_LOOKBACK_DAYS = 21;
+/** Complete days with a value needed before there's a usual to compare with. */
+export const USUAL_MIN_DAYS = 7;
 
 export type Targets = Record<NutrientKey, Target>;
 
@@ -144,13 +156,21 @@ const band = (teen: number, young: number, mid: number, older: number, oldest: n
   "71+": oldest,
 });
 
+// Sodium: the Dietary Guidelines' limit (the National Academies' Chronic Disease
+// Risk Reduction level) for everyone 14 and over. Saturated fat: under 10% of calories.
+export const SODIUM_LIMIT_MG = 2300;
+export const SATURATED_FAT_SHARE = 0.1;
+
 // RDA, or AI where there is no RDA (potassium), per day.
-const MICRONUTRIENTS: Record<"potassium" | "calcium" | "iron" | "vitaminA" | "vitaminC", { male: ByBand; female: ByBand }> = {
+const MICRONUTRIENTS: Record<"potassium" | "calcium" | "iron" | "vitaminA" | "vitaminC" | "vitaminD" | "magnesium", { male: ByBand; female: ByBand }> = {
   potassium: { male: band(3000, 3400, 3400, 3400, 3400), female: band(2300, 2600, 2600, 2600, 2600) },
   calcium: { male: band(1300, 1000, 1000, 1000, 1200), female: band(1300, 1000, 1000, 1200, 1200) },
   iron: { male: band(11, 8, 8, 8, 8), female: band(15, 18, 18, 8, 8) },
   vitaminA: { male: band(900, 900, 900, 900, 900), female: band(700, 700, 700, 700, 700) },
   vitaminC: { male: band(75, 90, 90, 90, 90), female: band(65, 75, 75, 75, 75) },
+  // 15 mcg (600 IU) to age 70, 20 mcg (800 IU) from 71, the same for everyone.
+  vitaminD: { male: band(15, 15, 15, 15, 20), female: band(15, 15, 15, 15, 20) },
+  magnesium: { male: band(410, 400, 420, 420, 420), female: band(360, 310, 320, 320, 320) },
 };
 
 // Tolerable Upper Intake Levels (food plus supplements). Vitamin A's applies
@@ -160,12 +180,19 @@ const UPPER_LIMITS: Partial<Record<NutrientKey, ByBand>> = {
   calcium: band(3000, 2500, 2500, 2000, 2000),
   iron: band(45, 45, 45, 45, 45),
   vitaminC: band(1800, 2000, 2000, 2000, 2000),
+  vitaminD: band(100, 100, 100, 100, 100),
 };
 
 // Pregnancy and breastfeeding RDAs (AI for potassium) as [ages 14–18, 19 and over].
-const LIFE_STAGE_MICRONUTRIENTS: Record<"pregnant" | "breastfeeding", Record<keyof typeof MICRONUTRIENTS, [number, number]>> = {
-  pregnant: { potassium: [2600, 2900], calcium: [1300, 1000], iron: [27, 27], vitaminA: [750, 770], vitaminC: [80, 85] },
-  breastfeeding: { potassium: [2500, 2800], calcium: [1300, 1000], iron: [10, 9], vitaminA: [1200, 1300], vitaminC: [115, 120] },
+const LIFE_STAGE_MICRONUTRIENTS: Record<"pregnant" | "breastfeeding", Record<Exclude<keyof typeof MICRONUTRIENTS, "magnesium">, [number, number]>> = {
+  pregnant: { potassium: [2600, 2900], calcium: [1300, 1000], iron: [27, 27], vitaminA: [750, 770], vitaminC: [80, 85], vitaminD: [15, 15] },
+  breastfeeding: { potassium: [2500, 2800], calcium: [1300, 1000], iron: [10, 9], vitaminA: [1200, 1300], vitaminC: [115, 120], vitaminD: [15, 15] },
+};
+
+// Magnesium in pregnancy and breastfeeding changes at 31, so it's by age band.
+const LIFE_STAGE_MAGNESIUM: Record<"pregnant" | "breastfeeding", ByBand> = {
+  pregnant: band(400, 350, 360, 360, 360),
+  breastfeeding: band(360, 310, 320, 320, 320),
 };
 
 /**
@@ -178,7 +205,9 @@ function micronutrient(key: keyof typeof MICRONUTRIENTS, profile: Profile, age: 
   const { lifeStage } = dietOf(profile);
   const stage = isPregnant(lifeStage) ? "pregnant" : isBreastfeeding(lifeStage) ? "breastfeeding" : null;
   const min = stage
-    ? LIFE_STAGE_MICRONUTRIENTS[stage][key][age <= 18 ? 0 : 1]
+    ? key === "magnesium"
+      ? LIFE_STAGE_MAGNESIUM[stage][group]
+      : LIFE_STAGE_MICRONUTRIENTS[stage][key][age <= 18 ? 0 : 1]
     : profile.sex === "male"
       ? values.male[group]
       : profile.sex === "female"
@@ -236,6 +265,12 @@ export function computeTargets(profile: Profile, today: string): Targets {
     iron: micronutrient("iron", profile, age),
     vitaminA: micronutrient("vitaminA", profile, age),
     vitaminC: micronutrient("vitaminC", profile, age),
+    vitaminD: micronutrient("vitaminD", profile, age),
+    magnesium: micronutrient("magnesium", profile, age),
+    sodium: { kind: "max", max: SODIUM_LIMIT_MG },
+    saturatedFat: { kind: "max", max: Math.round((kcal * SATURATED_FAT_SHARE) / 9) },
+    // Filled in from the person's history by withUsual (lib/usual.ts).
+    cholesterol: { kind: "usual" },
   };
 }
 
@@ -248,6 +283,10 @@ export function formatTarget(key: NutrientKey, target: Target): string {
   const unit = NUTRIENTS[key].unit;
   if (target.kind === "range") return `${formatAmount(target.min!)}–${formatAmount(target.max!)} ${unit}`;
   if (target.kind === "min") return `at least ${formatAmount(target.min!)} ${unit}`;
+  if (target.kind === "usual") {
+    if (target.usual === undefined) return "your own usual, once you've logged enough days";
+    return `under ${formatAmount(Math.round(target.max!))} ${unit} (${USUAL_MARGIN * 100}% above your usual ${formatAmount(Math.round(target.usual))} ${unit})`;
+  }
   return `under ${formatAmount(target.max!)} ${unit}`;
 }
 
@@ -303,6 +342,12 @@ export function explainTarget(key: NutrientKey, profile: Profile, targets: Targe
       return `45–65% of your ${kcalText}, at 4 kcal per gram, and at least 130 g, the daily minimum the brain needs.`;
     case "fat":
       return `${age <= 18 ? "25" : "20"}–35% of your ${kcalText}, at 9 kcal per gram.`;
+    case "sodium":
+      return `Under ${formatAmount(SODIUM_LIMIT_MG)} mg a day, the limit in the Dietary Guidelines for Americans. Most sodium comes from packaged, canned and restaurant food, not the salt shaker. If your doctor gave you a lower limit, follow that.`;
+    case "saturatedFat":
+      return `Under 10% of your ${kcalText}, at 9 kcal per gram, so under ${target.max} g (the Dietary Guidelines for Americans). Saturated fat is mostly in butter, fatty meat, cheese and some oils.`;
+    case "cholesterol":
+      return `Current guidelines no longer set a daily limit (the old 300 mg cap was dropped in 2015), so this compares you with yourself: your average is flagged when it runs more than ${USUAL_MARGIN * 100}% above your usual, which is your average over up to the 3 weeks before. It needs at least ${USUAL_MIN_DAYS} complete days of history first.`;
     case "fiber":
       return `14 g for every 1,000 kcal you eat (the National Academies’ Adequate Intake), so ${target.min} g at ${kcalText}.`;
     default: {
@@ -315,7 +360,9 @@ export function explainTarget(key: NutrientKey, profile: Profile, targets: Targe
         ? ` More than ${formatAmount(target.upper)} ${unit} a day, usually from supplements, is above the safe upper limit.`
         : "";
       const kidney = key === "potassium" ? " If you have kidney disease, ask your doctor, as this may not apply." : "";
-      return `The ${basis} for ${groupName(profile, age)}${nonbinary}.${upper}${kidney}`;
+      const sun = key === "vitaminD" ? " Sunlight and supplements also make vitamin D, so food alone can look low." : "";
+      const supplements = key === "magnesium" ? " The upper limit of 350 mg applies to supplements, not food." : "";
+      return `The ${basis} for ${groupName(profile, age)}${nonbinary}.${upper}${kidney}${sun}${supplements}`;
     }
   }
 }

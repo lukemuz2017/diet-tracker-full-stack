@@ -6,8 +6,9 @@ import { InfoButton } from "@/components/ui/InfoButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { DayBadge } from "@/components/WindowView";
 import { addDays, formatDay, formatShortDay } from "@/lib/dates";
-import { NUTRIENT_KEYS, formatValue, statusFor } from "@/lib/log";
-import { NUTRIENT_GROUPS, NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
+import { SCORED_KEYS, formatValue, statusFor } from "@/lib/log";
+import { withUsual } from "@/lib/usual";
+import { NUTRIENT_GROUPS, NUTRIENTS, WHY, type NutrientKey } from "@/lib/nutrients";
 import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { computeTargets } from "@/lib/targets";
@@ -34,10 +35,12 @@ const SUMMARY: Record<string, string> = { "to-go": "Under", "in-range": "In rang
 // The grid's two halves (lib/nutrients.ts groups): nutrients with a range to
 // stay inside, then ones to get at least enough of, where "in range" reads
 // "Enough" (going over a minimum is never a problem, short of an upper limit).
-const SECTION_TITLE: Record<string, string> = { "Energy and macros": "Keep in range", "Get enough of": "Get enough of" };
+const SECTION_TITLE: Record<string, string> = { "Energy and macros": "Keep in range", "Get enough of": "Get enough of", "Keep under": "Keep under" };
 
+/** What the badge says to a screen reader (sighted people see the check). */
 function summaryLabel(kind: string, targetKind: string): string {
-  return kind === "in-range" && targetKind === "min" ? "Enough" : SUMMARY[kind];
+  if (kind !== "in-range") return SUMMARY[kind];
+  return targetKind === "min" ? "Enough" : targetKind === "max" ? "Under the limit" : targetKind === "usual" ? "Within your usual" : "In range";
 }
 
 /**
@@ -79,13 +82,13 @@ export function WeekRibbons({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const targets = computeTargets(profile, today);
+  const targets = withUsual(computeTargets(profile, today), data, end);
   const summary = summarizeWindow(data, end, targets);
   const dayLabel = (date: string) => (date === today ? "Today" : formatDay(date).slice(0, 3));
   const dayName = (date: string) => (date === today ? "Today" : date === addDays(today, -1) ? "Yesterday" : formatDay(date));
 
   const dayShare = summary.days.map((day) => {
-    const known = NUTRIENT_KEYS.filter((key) => day.totals[key] !== undefined);
+    const known = SCORED_KEYS.filter((key) => day.totals[key] !== undefined);
     if (known.length === 0) return null;
     return known.filter((key) => statusFor(key, targets[key], day.totals[key]).kind === "in-range").length / known.length;
   });
@@ -149,12 +152,14 @@ export function WeekRibbons({
             </span>
           </div>
 
-          {NUTRIENT_GROUPS.map((group) => (
+          {NUTRIENT_GROUPS.map((group, groupIndex) => (
             <Fragment key={group.title}>
               <h2 className="sticky left-0 w-max border-line pb-1 pt-3 text-xs font-bold uppercase tracking-[0.08em] text-leaf">
                 {SECTION_TITLE[group.title] ?? group.title}
               </h2>
               {group.keys.map((key) => {
+            // Stagger the checks down the column, group by group.
+            const rowIndex = NUTRIENT_GROUPS.slice(0, groupIndex).reduce((n, g) => n + g.keys.length, 0) + group.keys.indexOf(key);
             const { label, unit } = NUTRIENTS[key];
             const average = summary.averages[key];
             const status = statusFor(key, targets[key], summary.counted > 0 ? average : undefined);
@@ -205,7 +210,7 @@ export function WeekRibbons({
                         aria-label={`${label} average: ${status.text}. ${open ? "Hide" : "Show"} details`}
                         className="whitespace-nowrap rounded-full"
                       >
-                        <StatusChip status={status.kind}>{summaryLabel(status.kind, targets[key].kind)}</StatusChip>
+                        <StatusChip status={status.kind} delay={rowIndex * 70}>{summaryLabel(status.kind, targets[key].kind)}</StatusChip>
                       </button>
                     ) : (
                       <span className="text-sm text-muted">–</span>
@@ -227,7 +232,7 @@ export function WeekRibbons({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range or enough that day</span>
+        <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range, enough or under the limit that day</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-lemon align-[-2px]" />Under</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-carrot align-[-2px]" />Over</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm border-[1.5px] border-dashed border-field align-[-2px]" />Not logged</span>
@@ -268,6 +273,7 @@ function NutrientDetail({
 
   return (
     <div className="mb-2 flex flex-col gap-4 rounded-xl bg-celery/60 p-4">
+      <p className="max-w-[60ch] text-sm text-muted">{WHY[nutrientKey]}</p>
       <NutrientBar nutrient={nutrientKey} target={targets[nutrientKey]} value={summary.counted > 0 ? summary.averages[nutrientKey] : undefined} />
       <table className="w-full text-sm">
         <caption className="sr-only">{label} each day and the food that gave the most. Grayed days aren’t marked complete, so they’re left out of the average.</caption>

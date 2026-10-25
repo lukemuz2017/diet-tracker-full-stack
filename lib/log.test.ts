@@ -89,3 +89,12 @@ test("status judges the rounded number that's shown", () => {
   assert.equal(statusFor("fiber", { kind: "min", min: 31 }, 30.6).kind, "in-range");
   assert.equal(statusFor("fiber", { kind: "min", min: 31 }, 30.4).kind, "to-go");
 });
+
+test("cholesterol is judged against the person's own usual, once there is one", () => {
+  assert.deepEqual(statusFor("cholesterol", { kind: "usual" }, 300), { kind: "unknown", text: "Building your usual" });
+  const usual = { kind: "usual" as const, usual: 280, max: 336 };
+  assert.deepEqual(statusFor("cholesterol", usual, 300), { kind: "in-range", text: "Within your usual" });
+  assert.deepEqual(statusFor("cholesterol", usual, 336), { kind: "in-range", text: "Within your usual" });
+  assert.deepEqual(statusFor("cholesterol", usual, 400), { kind: "over", text: "Above your usual by 120 mg" });
+  assert.equal(statusFor("cholesterol", usual, undefined).kind, "unknown");
+});
