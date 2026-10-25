@@ -195,17 +195,30 @@ function SampleData({ data, today }: { data: SavedData; today: string }) {
       <h2 className="font-display text-xl font-extrabold">Sample data</h2>
       {hasSample ? (
         <>
-          <p className="text-[15px] text-muted">Example meals are loaded for the days before today. Clearing them keeps everything you logged.</p>
-          <Button
-            variant="secondary"
-            className="self-start"
-            onClick={() => {
-              updateData(withoutSample);
-              showToast("Removed the sample meals");
-            }}
-          >
-            Clear sample data
-          </Button>
+          <p className="text-[15px] text-muted">
+            Example meals are loaded for the days before today. Clearing or reloading them keeps everything you logged. Reload
+            if the samples were added before a nutrient was tracked.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                updateData((saved) => withSample(withoutSample(saved), today, data.profile ? maintenanceCalories(data.profile, today) : undefined));
+                showToast("Reloaded the sample meals");
+              }}
+            >
+              Reload sample data
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                updateData(withoutSample);
+                showToast("Removed the sample meals");
+              }}
+            >
+              Clear sample data
+            </Button>
+          </div>
         </>
       ) : confirming ? (
         <>

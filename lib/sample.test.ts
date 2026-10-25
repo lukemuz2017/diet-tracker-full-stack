@@ -51,3 +51,20 @@ test("portions scale toward the person's calories and stay realistic", () => {
     if (entry.foodId === "egg") assert.ok(Number.isInteger(entry.servings));
   }
 });
+
+test("sample meals carry the newer nutrients: vitamin D, magnesium, sodium and cholesterol", () => {
+  const entries = sampleEntries(EMPTY, TODAY);
+  for (const key of ["vitaminD", "magnesium", "sodium", "cholesterol"] as const) {
+    assert.ok(entries.some((entry) => (entry.nutrients[key] ?? 0) > 0), `${key} appears in the sample meals`);
+  }
+});
+
+test("reloading replaces the old sample meals and keeps the person's own", () => {
+  const stale = withSample({ ...EMPTY, entries: [mine] }, TODAY);
+  // Pretend the first load was before the newer nutrients: strip them from the sample entries.
+  const old = { ...stale, entries: stale.entries.map((entry) => (entry.sample ? { ...entry, nutrients: { calories: entry.nutrients.calories } } : entry)) };
+  const reloaded = withSample(withoutSample(old), TODAY);
+  assert.ok(reloaded.entries.includes(mine));
+  assert.equal(reloaded.entries.filter(isSample).length, stale.entries.filter(isSample).length);
+  assert.ok(reloaded.entries.filter(isSample).some((entry) => (entry.nutrients.magnesium ?? 0) > 0));
+});

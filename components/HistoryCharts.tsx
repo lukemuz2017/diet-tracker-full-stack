@@ -192,18 +192,20 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
 
       <details>
         <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-leaf">Show as a table</summary>
-        <table className="w-full max-w-lg text-[15px]">
+        {/* Wide enough that days and numbers never wrap; scrolls sideways on a narrow phone. */}
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[34rem] text-[15px]">
           <caption className="sr-only">
             {label} by day, {formatDay(summary.start)} to {formatDay(summary.end)}
           </caption>
           <thead>
             <tr className="text-left text-[13px] text-muted">
-              <th scope="col" className="py-1 font-normal">Day</th>
-              <th scope="col" className="py-1 text-right font-normal">
+              <th scope="col" className="whitespace-nowrap py-2 pr-4 font-normal">Day</th>
+              <th scope="col" className="whitespace-nowrap py-2 pl-4 text-right font-normal">
                 {label} ({unit})
               </th>
-              <th scope="col" className="py-1 pl-4 text-right font-normal">Average so far</th>
-              <th scope="col" className="py-1 pl-4 font-normal">Status</th>
+              <th scope="col" className="whitespace-nowrap py-2 pl-6 text-right font-normal">Average so far</th>
+              <th scope="col" className="py-2 pl-6 font-normal">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -212,10 +214,10 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
               const average = running[index];
               return (
                 <tr key={day.date}>
-                  <th scope="row" className="py-1.5 text-left font-bold">{formatShortDay(day.date)}</th>
-                  <td className="py-1.5 text-right tabular-nums">{value === undefined ? "–" : formatValue(value)}</td>
-                  <td className="py-1.5 pl-4 text-right tabular-nums">{average === undefined ? "–" : formatValue(average)}</td>
-                  <td className="py-1.5 pl-4 text-[13px]">
+                  <th scope="row" className="whitespace-nowrap py-2 pr-4 text-left font-bold">{formatShortDay(day.date)}</th>
+                  <td className="whitespace-nowrap py-2 pl-4 text-right tabular-nums">{value === undefined ? "–" : formatValue(value)}</td>
+                  <td className="whitespace-nowrap py-2 pl-6 text-right tabular-nums">{average === undefined ? "–" : formatValue(average)}</td>
+                  <td className="py-2 pl-6 text-[13px] text-muted">
                     {day.foods === 0 ? "Not logged" : value === undefined ? "No value logged" : statusFor(key, target, value).text}
                     {STATE_WORDS[day.state]}
                   </td>
@@ -224,6 +226,7 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
             })}
           </tbody>
         </table>
+        </div>
       </details>
     </Card>
   );
