@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Diet Tracker: Process Write-up</title>
+<style>
+  @page { size: letter; margin: 1in; }
+  html, body { margin: 0; }
+  body { font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.15; color: #000; }
+  h1 { font-size: 14pt; margin: 0 0 2pt; }
+  .meta { margin: 0 0 8pt; font-style: italic; }
+  h2 { font-size: 11pt; margin: 8pt 0 2pt; }
+  p { margin: 0 0 5pt; text-align: justify; }
+</style>
+</head>
+<body>
+<h1>Diet Tracker: Process Write-up</h1>
+<p class="meta">MPCS 51238 Design, Build, Ship · Assignment 3, Patterns &amp; Flows</p>
+
+<h2>The idea</h2>
+<p>Diet Tracker helps people keep a balanced diet, not lose weight. Most food apps are built around a calorie deficit and judge you one day at a time, which can make an ordinary day feel like a failure. I wanted a tool that tells you, plainly, whether what you eat adds up to a healthy week. After a few facts (height, weight, date of birth, sex and activity), it estimates maintenance calories and sets a range for ten nutrients: calories, protein, carbs, fat, fiber, potassium, calcium, iron, vitamin A and vitamin C. Every range comes from a cited source, mainly the National Academies’ 2023 energy equations and the recommended dietary allowances, with official values for pregnancy and breastfeeding.</p>
+<p>The core decision was to judge each nutrient on its <b>average over the last 7 days</b> rather than on a single day. One day is noisy: a birthday dinner, a busy shift or a meal out can push any number far from its range, and none of that matters if the week balances out. Vitamins and minerals in particular vary a lot from day to day. So daily numbers are only a guide, and the verdict comes from the rolling week. To keep that average honest, a day counts only once you mark it complete, so a half-logged day never drags the numbers down; until today is complete, the week runs from yesterday back. Data stays in the browser, with no account or server.</p>
+
+<h2>Design choices</h2>
+<p>I started from flows rather than screens: a first visit, the main task of logging food, and coming back. The first visit is the onboarding: a short setup with errors next to each field, then your personal ranges with ⓘ buttons that explain each one, then your first log. I studied MyFitnessPal, MyNetDiary and Noom and borrowed “why we ask” notes, explanations behind info buttons, marking a day complete, and showing days logged instead of streaks. For the look I chose “Market Stand” from four mood boards: produce colors, kraft paper and nutrient tags styled as produce stickers, so the app feels friendly rather than clinical. Status colors are consistent everywhere (yellow under, green in range, orange over), and I checked text contrast against WCAG AA.</p>
+
+<h2>How the app evolved</h2>
+<p>The structure changed the most. It began as separate Today, Log and Week pages, became a single food log, then a “This week” page with Progress and Foods tabs, and finally one <b>Dashboard</b>. That page holds a summary card, a Today row for logging and marking the day complete, and a week grid with a cell per nutrient per day. Clicking a day opens it in a side panel with its meals; clicking a nutrient shows each day’s amount and top source. Suggestions moved from one-tap “Add a banana” buttons to three plain tiles (Going well, Could improve, Bigger picture) with the suggested foods in bold, and they respect allergies and eating patterns. I cut whatever didn’t earn its place: added sugar and later sodium, a paste-a-recipe option that would have needed an API, and most explanatory subtext, which moved behind ⓘ buttons. Logging became faster: natural units (2 eggs, ½ cup), meals, and a “To add” list so a whole day can be logged in one sitting. Finally, four agent testers walked through the app as first-time and returning users on the web and on a phone-sized screen. Their feedback led to fixes such as keeping picked foods when the pop-up closes, a visible Undo, a phone grid that pages three days at a time with arrows, a typed date of birth, and a brown-bag background with brown cells for days not yet marked complete.</p>
+
+<h2>A note for graders</h2>
+<p>The app is built for a week of real use, which is hard to see in a single visit. On the Profile page, <b>Load a sample 2 weeks</b> fills the 15 days before today with example meals scaled to your maintenance calories, marking all but one “busy day” complete. It exists so you can see the Dashboard, suggestions and History as they look in the long run without entering dozens of foods. It never touches days you logged yourself, and <b>Clear sample data</b> removes it again.</p>
+</body>
+</html>

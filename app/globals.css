@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+/* Market Stand tokens. See design.md for roles and checked contrast. */
+@theme {
+  --color-celery: #eef2e4;
+  --color-paper: #fbfcf7;
+  --color-soil: #1f2a1c;
+  --color-muted: #4a5545;
+  /* Grayed-out rows (days that don't count): lighter than muted, still 4.5:1+. */
+  --color-faded: #687063;
+  --color-leaf: #2e6b3f;
+  --color-leaf-dark: #245733;
+  --color-leaf-tint: #dce8d0;
+  --color-tomato: #c8402a;
+  --color-lemon: #f2c94c;
+  --color-lemon-tint: #fbefc4;
+  --color-kraft: #c9a27a;
+  /* Page background: a light brown-bag tint. Muted text on it is 5.8:1, leaf 4.7:1. */
+  --color-kraft-tint: #e9dcc8;
+  --color-carrot: #d9773a;
+  --color-line: #dde5cf;
+  --color-track: #e1e8d6;
+  --color-band: #b9d3a8;
+  --color-field: #b8c4a8;
+
+  --radius-field: 10px;
+  --radius-card: 18px;
+}
+
+@theme inline {
+  --font-display: var(--font-bricolage), "Arial Black", sans-serif;
+  --font-sans: var(--font-atkinson), Verdana, sans-serif;
+}
+
+@layer base {
+  body {
+    background: var(--color-kraft-tint);
+    color: var(--color-soil);
+  }
+
+  /* Two-ring focus: the outline offset shows the surface color between
+     the element and the soil ring. */
+  :focus-visible {
+    outline: 3px solid var(--color-soil);
+    outline-offset: 2px;
+  }
+}
+
+/* Welcome screen: the card pops in, stickers drop on like they're being
+   stuck down, and the steps rise in one by one. Elements rest in their final
+   state, and nothing moves for people who prefer reduced motion. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sticker-in {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) rotate(calc(var(--tilt, 0deg) - 20deg)) scale(1.15);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--tilt, 0deg));
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sticker-in {
+  transform: rotate(var(--tilt, 0deg));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pop-in {
+    animation: pop-in 650ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+  }
+  .sticker-in {
+    animation: sticker-in 750ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  }
+  .rise-in {
+    animation: rise-in 500ms ease-out both;
+  }
+}
+
+/* Inputs sit inside a bordered box (for units like "lb"), so the box shows
+   the focus ring instead of the input. */
+.field-box:has(input:focus-visible) {
+  outline: 3px solid var(--color-soil);
+  outline-offset: 2px;
+}
+.field-box input:focus-visible {
+  outline: none;
+}
