@@ -43,3 +43,9 @@ next-env.d.ts
 # course brief (course material, not ours to publish)
 /Assignment 3 - Patterns & Flows.pdf
 /Design, Build, Ship - Assignment 4 - Full Stack App.pdf
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
