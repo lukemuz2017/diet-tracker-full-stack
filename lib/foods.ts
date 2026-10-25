@@ -125,9 +125,19 @@ const AMOUNTS: Record<string, AmountSpec> = {
 /** Saved recipes are logged by the serving. */
 export const RECIPE_SERVINGS: AmountSpec = { base: 1, one: "serving", many: "servings", choices: [0.5, 1, 1.5, 2, 3] };
 
-/** The unit a food is measured in; recipes are servings, custom foods are portions. */
+/** Foods from USDA search are weighed: their values are per 100 g. */
+export const USDA_GRAMS: AmountSpec = {
+  base: 100,
+  one: "g",
+  many: "g",
+  choices: [25, 50, 75, 100, 150, 200, 250, 300],
+  note: "100 g is about 3½ ounces",
+};
+
+/** The unit a food is measured in; recipes are servings, USDA foods grams, custom foods portions. */
 export function amountFor(foodId: string | undefined): AmountSpec {
   if (foodId?.startsWith("recipe:")) return RECIPE_SERVINGS;
+  if (foodId?.startsWith("usda:")) return USDA_GRAMS;
   return (foodId && AMOUNTS[foodId]) || PORTION;
 }
 

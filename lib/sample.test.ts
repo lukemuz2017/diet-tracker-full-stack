@@ -4,7 +4,7 @@ import { isSample, sampleEntries, withSample, withoutSample } from "./sample.ts"
 import type { Entry, SavedData } from "./storage.ts";
 
 const TODAY = "2026-10-19";
-const EMPTY: SavedData = { version: 1, profile: null, entries: [], completeDays: [], recipes: [] };
+const EMPTY: SavedData = { version: 1, profile: null, entries: [], completeDays: [], recipes: [], savedFoods: [] };
 const mine: Entry = { id: "mine", date: "2026-10-10", name: "Toast", servings: 1, nutrients: { calories: 80 }, createdAt: "2026-10-10T08:00:00Z" };
 
 test("sample data covers the two weeks before today, not today", () => {

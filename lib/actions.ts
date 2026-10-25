@@ -4,15 +4,14 @@ import { scaleNutrients, withServings } from "./log.ts";
 import type { Meal } from "./meals.ts";
 import type { Nutrients } from "./nutrients.ts";
 import type { Recipe } from "./recipe.ts";
-import { updateData, type Entry } from "./storage.ts";
+import { updateData, type Entry, type SavedFood } from "./storage.ts";
 import { showToast } from "./toast.ts";
 
 // Changes people make while logging, each with an Undo message.
 
+/** Ids are uuids, the type of the tables' id columns. */
 function newId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return crypto.randomUUID();
 }
 
 export function addFood(
@@ -106,5 +105,31 @@ export function deleteRecipe(id: string) {
   if (removed) {
     const recipe = removed;
     showToast(`Deleted ${recipe.name}`, () => updateData((data) => ({ ...data, recipes: [...data.recipes, recipe] })));
+  }
+}
+
+/** Foods logged from USDA search are saved, so they come up instantly next time. */
+export function saveUsdaFoods(foods: { fdcId: number; name: string; per100g: Nutrients }[]) {
+  updateData((data) => {
+    const known = new Set(data.savedFoods.map((food) => food.fdcId));
+    const createdAt = new Date().toISOString();
+    const added = foods
+      .filter((food) => !known.has(food.fdcId) && known.add(food.fdcId))
+      .map((food) => ({ ...food, id: newId(), createdAt }));
+    return added.length ? { ...data, savedFoods: [...data.savedFoods, ...added] } : data;
+  });
+}
+
+export function removeSavedFood(id: string) {
+  let removed: SavedFood | undefined;
+  updateData((data) => {
+    removed = data.savedFoods.find((food) => food.id === id);
+    return { ...data, savedFoods: data.savedFoods.filter((food) => food.id !== id) };
+  });
+  if (removed) {
+    const food = removed;
+    showToast(`Removed ${food.name} from your saved foods`, () =>
+      updateData((data) => ({ ...data, savedFoods: [...data.savedFoods, food] })),
+    );
   }
 }

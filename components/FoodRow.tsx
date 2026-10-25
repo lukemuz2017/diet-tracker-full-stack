@@ -62,6 +62,7 @@ export function FoodRow({
   actionLabel = "Add",
   warnings = [],
   onAdd,
+  onRemove,
 }: {
   name: string;
   /** Clashes with the profile's diet notes, e.g. "Contains dairy". */
@@ -73,6 +74,8 @@ export function FoodRow({
   /** Button text; the default is "Add". */
   actionLabel?: string;
   onAdd: (multiple: number) => void;
+  /** For saved foods: forget this one (it can be found and saved again). */
+  onRemove?: () => void;
 }) {
   const [quantity, setQuantity] = useState(quantityFor(spec, defaultMultiple));
   const selectId = useId();
@@ -118,6 +121,16 @@ export function FoodRow({
           <PlusIcon width={18} height={18} strokeWidth={2.25} />
           {actionLabel}
         </button>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Remove ${name} from your saved foods`}
+            className="inline-flex min-h-11 items-center px-1.5 text-sm font-bold text-leaf underline underline-offset-[3px] hover:text-soil"
+          >
+            Remove
+          </button>
+        )}
       </div>
     </li>
   );

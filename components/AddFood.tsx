@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { CustomFoodForm } from "@/components/CustomFoodForm";
 import { AmountSelect, FoodRow } from "@/components/FoodRow";
-import { FoodSearch, type SearchOption } from "@/components/FoodSearch";
+import { FoodSearch, type RemoteSearch, type SearchOption } from "@/components/FoodSearch";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon } from "@/components/ui/icons";
-import { addFoods, setDayComplete } from "@/lib/actions";
+import { addFoods, removeSavedFood, saveUsdaFoods, setDayComplete } from "@/lib/actions";
 import { formatAmount, multipleFor, quantityFor } from "@/lib/amounts";
 import { formatDay } from "@/lib/dates";
 import { warningsFor } from "@/lib/diet";
@@ -17,6 +17,7 @@ import { MEALS, type Meal } from "@/lib/meals";
 import type { Nutrients } from "@/lib/nutrients";
 import { dietOf, type Diet } from "@/lib/profile";
 import type { SavedData, TrayItem } from "@/lib/storage";
+import type { UsdaFood } from "@/lib/usda";
 
 interface Choice {
   key: string;
@@ -31,7 +32,9 @@ type Mode = "foods" | "meals";
 /** Saved recipes and meals shown under the search before anything is typed. */
 const MEALS_SHOWN = 6;
 
-function toOption(choice: Choice, diet: Diet): SearchOption {
+const NO_DIET: Pick<Diet, "allergies" | "pattern"> = { allergies: [], pattern: "everything" };
+
+function toOption(choice: Choice, diet: Pick<Diet, "allergies" | "pattern">): SearchOption {
   const spec = amountFor(choice.foodId);
   const kcal = choice.perServing.calories;
   const warning = warningsFor(choice.foodId, diet).join(" · ");
@@ -41,6 +44,17 @@ function toOption(choice: Choice, diet: Diet): SearchOption {
     detail: `${formatAmount(spec, spec.base)}${kcal !== undefined ? ` · ${formatValue(kcal)} kcal` : ""}`,
     warning: warning || undefined,
   };
+}
+
+const usdaId = (fdcId: number) => `usda:${fdcId}`;
+
+/** Asks our server (never USDA directly: the key stays on the server). */
+async function fetchUsda(query: string, signal: AbortSignal): Promise<UsdaFood[]> {
+  const response = await fetch(`/api/foods/search?q=${encodeURIComponent(query)}`, { signal });
+  if (!response.ok) throw new Error(`Search failed (${response.status})`);
+  const body = (await response.json()) as { foods?: UsdaFood[] };
+  if (!Array.isArray(body.foods)) throw new Error("Unexpected search response");
+  return body.foods;
 }
 
 function newUid(): string {
@@ -95,6 +109,12 @@ export function AddFoodPanel({
   }
 
   function commit() {
+    // USDA foods are saved as they're logged, so next time they're instant.
+    saveUsdaFoods(
+      staged
+        .filter((item) => item.foodId?.startsWith("usda:"))
+        .map((item) => ({ fdcId: Number(item.foodId!.slice("usda:".length)), name: item.name, per100g: item.perServing })),
+    );
     const where = `${isToday ? "" : `${formatDay(date)} `}${mealName}`;
     const [only] = staged;
     const spec = amountFor(only.foodId);
@@ -115,13 +135,50 @@ export function AddFoodPanel({
   const recent = recentFoods(data.entries, 100);
   const lastMultiple = (foodId: string) => recent.find((item) => item.foodId === foodId)?.lastServings ?? 1;
 
-  const foodChoices: Choice[] = FOODS.map((food) => ({
-    key: food.id,
-    name: food.name,
-    foodId: food.id,
-    perServing: food.nutrients,
-    multiple: lastMultiple(food.id),
-  }));
+  // Saved USDA foods, newest first, so a food you've had before is found instantly.
+  const savedChoices: Choice[] = data.savedFoods
+    .slice()
+    .reverse()
+    .map((food) => ({
+      key: usdaId(food.fdcId),
+      name: food.name,
+      foodId: usdaId(food.fdcId),
+      perServing: food.per100g,
+      multiple: lastMultiple(usdaId(food.fdcId)),
+    }));
+
+  const foodChoices: Choice[] = [
+    ...FOODS.map((food) => ({
+      key: food.id,
+      name: food.name,
+      foodId: food.id,
+      perServing: food.nutrients,
+      multiple: lastMultiple(food.id),
+    })),
+    ...savedChoices,
+  ];
+
+  // USDA results seen in this pop-up, so a pick can be staged by its key.
+  const usdaFound = useRef(new Map<string, Choice>());
+  // Made once, so an in-flight search isn't restarted on every re-render.
+  // Results already saved are dropped by FoodSearch (same key as the saved
+  // food listed above them); USDA foods carry no diet tags, so no warnings.
+  const remote = useMemo<RemoteSearch>(
+    () => ({
+      label: "More from USDA",
+      source: "USDA",
+      minLength: 3,
+      search: async (query, signal) => {
+        const foods = await fetchUsda(query, signal);
+        return foods.map((food) => {
+          const choice: Choice = { key: usdaId(food.fdcId), name: food.name, foodId: usdaId(food.fdcId), perServing: food.per100g, multiple: 1 };
+          usdaFound.current.set(choice.key, choice);
+          return toOption(choice, NO_DIET);
+        });
+      },
+    }),
+    [],
+  );
 
   // Meals & recipes: saved recipes plus foods you've added yourself, newest first.
   const mealChoices: Choice[] = [
@@ -178,8 +235,9 @@ export function AddFoodPanel({
         label={mode === "foods" ? "Search foods" : "Search your meals and recipes"}
         placeholder={mode === "foods" ? "Try “eggs” or “rice”" : mealChoices.length ? "Type a name, or pick one below" : "No saved recipes yet"}
         options={options}
+        remote={mode === "foods" ? remote : undefined}
         onPick={(key) => {
-          const choice = allChoices.find((item) => item.key === key);
+          const choice = allChoices.find((item) => item.key === key) ?? usdaFound.current.get(key);
           if (choice) stage(choice, choice.multiple);
         }}
         onAddOwn={addOwn}
@@ -276,6 +334,29 @@ export function AddFoodPanel({
           New recipe
         </Link>
       </div>
+
+      {extra === "browse" && savedChoices.length > 0 && (
+        <section>
+          <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Saved from USDA</h3>
+          <ul className="divide-y divide-line">
+            {data.savedFoods
+              .slice()
+              .reverse()
+              .map((food) => (
+                <FoodRow
+                  key={food.id}
+                  name={food.name}
+                  spec={amountFor(usdaId(food.fdcId))}
+                  perBase={food.per100g}
+                  defaultMultiple={lastMultiple(usdaId(food.fdcId))}
+                  actionLabel={staged.some((item) => item.foodId === usdaId(food.fdcId)) ? "Add more" : "Select"}
+                  onAdd={(multiple) => stage({ name: food.name, foodId: usdaId(food.fdcId), perServing: food.per100g }, multiple)}
+                  onRemove={() => removeSavedFood(food.id)}
+                />
+              ))}
+          </ul>
+        </section>
+      )}
 
       {extra === "browse" &&
         CATEGORY_ORDER.map((category) => {

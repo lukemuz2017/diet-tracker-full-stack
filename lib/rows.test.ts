@@ -4,7 +4,7 @@ import type { Profile } from "./profile.ts";
 import { changesBetween, dataFromRows, entryFromRow, entryToRow, hasChanges, profileFromRow, profileToRow } from "./rows.ts";
 import type { Entry, SavedData } from "./storage.ts";
 
-const EMPTY: SavedData = { version: 1, profile: null, entries: [], completeDays: [], recipes: [] };
+const EMPTY: SavedData = { version: 1, profile: null, entries: [], completeDays: [], recipes: [], savedFoods: [] };
 const profile: Profile = { units: "us", heightCm: 175.26, weightKg: 70.3, birthDate: "1995-02-19", sex: "female", activity: "light" };
 const egg: Entry = {
   id: "0b6f6a52-7a0e-4d2b-9a5f-1d2c3e4f5a6b",
@@ -65,8 +65,19 @@ test("removed entries and a cleared profile are deleted", () => {
 });
 
 test("rows from the database become saved data", () => {
-  const data = dataFromRows({ profile: profileToRow(profile), entries: [entryToRow(egg)], days: [{ date: "2026-10-25" }], recipes: [] });
+  const data = dataFromRows({ profile: profileToRow(profile), entries: [entryToRow(egg)], days: [{ date: "2026-10-25" }], foods: [] });
   assert.equal(data.profile?.sex, "female");
   assert.deepEqual(data.entries, [egg]);
   assert.deepEqual(data.completeDays, ["2026-10-25"]);
+});
+
+test("saved USDA foods and recipes share my_foods, and split again on load", () => {
+  const yogurt = { id: "22222222-2222-4222-8222-222222222222", fdcId: 170914, name: "Yogurt, Greek", per100g: { calories: 82 }, createdAt: "2026-10-25T09:00:00.000Z" };
+  const changes = changesBetween(EMPTY, { ...EMPTY, savedFoods: [yogurt] });
+  assert.deepEqual(changes.foods.upsert, [
+    { id: yogurt.id, kind: "usda", name: "Yogurt, Greek", fdc_id: 170914, nutrients: { calories: 82 }, servings: null, ingredients: null, created_at: yogurt.createdAt },
+  ]);
+  const data = dataFromRows({ profile: null, entries: [], days: [], foods: changes.foods.upsert });
+  assert.deepEqual(data.savedFoods, [yogurt]);
+  assert.deepEqual(data.recipes, []);
 });

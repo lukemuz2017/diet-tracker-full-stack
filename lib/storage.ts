@@ -32,6 +32,15 @@ export interface Entry {
   createdAt: string;
 }
 
+/** A food saved from USDA search (my_foods, kind "usda"). Logged in grams. */
+export interface SavedFood {
+  id: string;
+  fdcId: number;
+  name: string;
+  per100g: Nutrients;
+  createdAt: string;
+}
+
 export interface SavedData {
   version: 1;
   profile: Profile | null;
@@ -39,6 +48,7 @@ export interface SavedData {
   /** Dates the person marked complete. */
   completeDays: string[];
   recipes: Recipe[];
+  savedFoods: SavedFood[];
 }
 
 export type SyncStatus = "signed-out" | "loading" | "ready" | "error";
@@ -97,18 +107,18 @@ export async function load() {
   try {
     // No user_id filter on purpose: row-level security returns only the
     // signed-in person's rows, and the two-user test checks exactly that.
-    const [profile, entries, days, recipes] = await Promise.all([
+    const [profile, entries, days, foods] = await Promise.all([
       client.from("profiles").select("units, height_cm, weight_kg, birth_date, sex, activity, allergies, pattern, life_stage").maybeSingle(),
       client.from("log_entries").select("id, date, meal, name, amount, source, nutrients, is_sample, created_at").order("created_at"),
       client.from("complete_days").select("date").order("date"),
-      client.from("my_foods").select("id, kind, name, nutrients, servings, ingredients, created_at").eq("kind", "recipe").order("created_at"),
+      client.from("my_foods").select("id, kind, name, fdc_id, nutrients, servings, ingredients, created_at").order("created_at"),
     ]);
     if (id !== userId) return; // Signed out or switched while loading.
-    const error = profile.error ?? entries.error ?? days.error ?? recipes.error;
+    const error = profile.error ?? entries.error ?? days.error ?? foods.error;
     if (error) throw error;
     setState({
       status: "ready",
-      data: dataFromRows({ profile: profile.data, entries: entries.data ?? [], days: days.data ?? [], recipes: recipes.data ?? [] }),
+      data: dataFromRows({ profile: profile.data, entries: entries.data ?? [], days: days.data ?? [], foods: foods.data ?? [] }),
     });
   } catch {
     if (id === userId) setState({ status: "error", data: null });
@@ -116,7 +126,7 @@ export async function load() {
 }
 
 async function write(client: SupabaseClient, changes: Changes) {
-  const { profile, entries, days, recipes } = changes;
+  const { profile, entries, days, foods } = changes;
   const requests: PromiseLike<{ error: unknown }>[] = [];
   // Deletes always carry a filter (Supabase refuses a DELETE without one);
   // row-level security limits every request to the person's own rows.
@@ -130,8 +140,8 @@ async function write(client: SupabaseClient, changes: Changes) {
     );
   }
   if (days.remove.length) requests.push(client.from("complete_days").delete().in("date", days.remove));
-  if (recipes.upsert.length) requests.push(client.from("my_foods").upsert(recipes.upsert));
-  if (recipes.delete.length) requests.push(client.from("my_foods").delete().in("id", recipes.delete));
+  if (foods.upsert.length) requests.push(client.from("my_foods").upsert(foods.upsert));
+  if (foods.delete.length) requests.push(client.from("my_foods").delete().in("id", foods.delete));
   const results = await Promise.all(requests);
   const failed = results.find((result) => result.error);
   if (failed) throw failed.error;

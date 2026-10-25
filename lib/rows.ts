@@ -7,7 +7,7 @@ import { mealAt } from "./meals.ts";
 import type { Nutrients } from "./nutrients.ts";
 import { isProfile, type Profile } from "./profile.ts";
 import type { Ingredient, Recipe } from "./recipe.ts";
-import type { Entry, SavedData } from "./storage.ts";
+import type { Entry, SavedData, SavedFood } from "./storage.ts";
 
 export interface ProfileRow {
   units: Profile["units"];
@@ -33,15 +33,32 @@ export interface EntryRow {
   created_at: string;
 }
 
+// Recipes and saved USDA foods share the my_foods table. Both shapes list
+// every column, so one upsert can carry a mix of the two.
 export interface RecipeRow {
   id: string;
   kind: "recipe";
   name: string;
+  fdc_id: null;
   nutrients: Nutrients;
   servings: number;
   ingredients: Ingredient[] | null;
   created_at: string;
 }
+
+export interface SavedFoodRow {
+  id: string;
+  kind: "usda";
+  name: string;
+  fdc_id: number;
+  /** Per 100 g. */
+  nutrients: Nutrients;
+  servings: null;
+  ingredients: null;
+  created_at: string;
+}
+
+export type MyFoodRow = RecipeRow | SavedFoodRow;
 
 export function profileToRow(profile: Profile): ProfileRow {
   return {
@@ -117,6 +134,7 @@ export function recipeToRow(recipe: Recipe): RecipeRow {
     id: recipe.id,
     kind: "recipe",
     name: recipe.name,
+    fdc_id: null,
     nutrients: recipe.perServing,
     servings: recipe.servings,
     ingredients: recipe.ingredients ?? null,
@@ -135,19 +153,37 @@ export function recipeFromRow(row: RecipeRow): Recipe {
   };
 }
 
+export function savedFoodToRow(food: SavedFood): SavedFoodRow {
+  return {
+    id: food.id,
+    kind: "usda",
+    name: food.name,
+    fdc_id: food.fdcId,
+    nutrients: food.per100g,
+    servings: null,
+    ingredients: null,
+    created_at: food.createdAt,
+  };
+}
+
+export function savedFoodFromRow(row: SavedFoodRow): SavedFood {
+  return { id: row.id, fdcId: Number(row.fdc_id), name: row.name, per100g: row.nutrients ?? {}, createdAt: row.created_at };
+}
+
 /** Everything one person has saved, from their rows (RLS returns only theirs). */
 export function dataFromRows(rows: {
   profile: ProfileRow | null;
   entries: EntryRow[];
   days: { date: string }[];
-  recipes: RecipeRow[];
+  foods: MyFoodRow[];
 }): SavedData {
   return {
     version: 1,
     profile: rows.profile ? profileFromRow(rows.profile) : null,
     entries: rows.entries.map(entryFromRow),
     completeDays: rows.days.map((day) => day.date),
-    recipes: rows.recipes.map(recipeFromRow),
+    recipes: rows.foods.filter((row): row is RecipeRow => row.kind === "recipe").map(recipeFromRow),
+    savedFoods: rows.foods.filter((row): row is SavedFoodRow => row.kind === "usda").map(savedFoodFromRow),
   };
 }
 
@@ -156,7 +192,8 @@ export interface Changes {
   profile: ProfileRow | "delete" | null;
   entries: { upsert: EntryRow[]; delete: string[] };
   days: { add: string[]; remove: string[] };
-  recipes: { upsert: RecipeRow[]; delete: string[] };
+  /** Recipes and saved USDA foods (both in my_foods). */
+  foods: { upsert: MyFoodRow[]; delete: string[] };
 }
 
 // Saved data is never edited in place: a changed entry or recipe is a new
@@ -174,6 +211,7 @@ function diffById<T extends { id: string }>(before: T[], after: T[]) {
 export function changesBetween(before: SavedData, after: SavedData): Changes {
   const entries = diffById(before.entries, after.entries);
   const recipes = diffById(before.recipes, after.recipes);
+  const saved = diffById(before.savedFoods, after.savedFoods);
   const oldDays = new Set(before.completeDays);
   const newDays = new Set(after.completeDays);
   return {
@@ -184,7 +222,10 @@ export function changesBetween(before: SavedData, after: SavedData): Changes {
       add: [...newDays].filter((date) => !oldDays.has(date)),
       remove: [...oldDays].filter((date) => !newDays.has(date)),
     },
-    recipes: { upsert: recipes.upsert.map(recipeToRow), delete: recipes.delete },
+    foods: {
+      upsert: [...recipes.upsert.map(recipeToRow), ...saved.upsert.map(savedFoodToRow)],
+      delete: [...recipes.delete, ...saved.delete],
+    },
   };
 }
 
@@ -193,6 +234,6 @@ export function hasChanges(changes: Changes): boolean {
     changes.profile !== null ||
     changes.entries.upsert.length + changes.entries.delete.length > 0 ||
     changes.days.add.length + changes.days.remove.length > 0 ||
-    changes.recipes.upsert.length + changes.recipes.delete.length > 0
+    changes.foods.upsert.length + changes.foods.delete.length > 0
   );
 }
