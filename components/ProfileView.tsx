@@ -38,7 +38,9 @@ export function ProfileView() {
         eyebrow={firstVisit ? "Step 2 of 2" : undefined}
         title="Profile"
       />
-      <div className="flex max-w-2xl flex-col gap-5">
+      {/* From lg: your details on the left (it stays in view), the ranges on the right. */}
+      <div className="flex max-w-2xl flex-col gap-5 lg:grid lg:max-w-none lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="flex flex-col gap-5 lg:sticky lg:top-6">
         {/* Right after setup, the next step comes first, not after the ranges. */}
         {firstVisit && (
           <ButtonLink href="/log?add=1" className="min-h-12 self-start px-7 text-[17px]">
@@ -46,8 +48,16 @@ export function ProfileView() {
           </ButtonLink>
         )}
         <MemberCard profile={profile} today={today} />
+        {!firstVisit && (
+          <ButtonLink href="/log" className="min-h-12 self-start px-7 text-[17px]">
+            Back to your dashboard
+          </ButtonLink>
+        )}
+        <SampleData data={data} today={today} />
+        </div>
 
-        <div className="mt-2 flex flex-col gap-1">
+        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
           <h2 className="font-display text-2xl font-extrabold">Your daily ranges</h2>
           {/* The maintenance estimate lives here, with the ranges it sets. */}
           <p className="text-[15px] text-muted">
@@ -55,15 +65,16 @@ export function ProfileView() {
             the estimate to keep your weight steady.
           </p>
         </div>
+        <div className="grid gap-5 lg:grid-cols-2">
         {NUTRIENT_GROUPS.map((group, index) => (
-          <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]}`}>
+          <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]} ${group.keys.length > 6 ? "lg:row-span-2" : ""}`}>
             <h3 className="font-display text-xl font-extrabold">{group.title}</h3>
             <ul className="divide-y divide-line">
               {group.keys.map((key) => {
                 const { label } = NUTRIENTS[key];
                 const range = formatTarget(key, targets[key]);
                 return (
-                  <li key={key} className="relative flex items-center justify-between gap-4 py-3">
+                  <li key={key} className="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
                     <span className="flex items-center gap-2 font-bold">
                       {label}
                       <InfoButton label={`About the ${label.toLowerCase()} range`} anchor="parent">
@@ -73,21 +84,15 @@ export function ProfileView() {
                         {WHY[key]} {explainTarget(key, profile, targets, today)}
                       </InfoButton>
                     </span>
-                    <span className="text-right tabular-nums">{range}</span>
+                    <span className={`tabular-nums ${range.length <= 22 ? "whitespace-nowrap text-right" : "basis-full text-[15px] text-muted"}`}>{range}</span>
                   </li>
                 );
               })}
             </ul>
           </Card>
         ))}
-
-        {!firstVisit && (
-          <ButtonLink href="/log" className="min-h-12 self-start px-7 text-[17px]">
-            Back to your dashboard
-          </ButtonLink>
-        )}
-
-        <SampleData data={data} today={today} />
+        </div>
+        </div>
       </div>
     </>
   );
