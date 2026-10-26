@@ -37,9 +37,8 @@ export function ProfileView() {
         eyebrow={firstVisit ? "Step 2 of 2" : undefined}
         title="Profile"
       />
-      {/* From lg: your details on the left (it stays in view), the ranges on the right. */}
-      <div className="flex max-w-2xl flex-col gap-5 lg:grid lg:max-w-none lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <div className="flex flex-col gap-5 lg:sticky lg:top-6">
+      {/* From lg the details card is one wide strip and the ranges sit in 2 columns (3 from xl). */}
+      <div className="flex max-w-2xl flex-col gap-5 lg:max-w-none">
         {/* Right after setup, the next step comes first, not after the ranges. */}
         {firstVisit && (
           <ButtonLink href="/log?add=1" className="min-h-12 self-start px-7 text-[17px]">
@@ -47,44 +46,45 @@ export function ProfileView() {
           </ButtonLink>
         )}
         <MemberCard profile={profile} today={today} />
+
+        <h2 className="mt-2 font-display text-2xl font-extrabold">Your daily ranges</h2>
+        <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          {NUTRIENT_GROUPS.map((group, index) => (
+            <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]} ${group.keys.length > 6 ? "lg:row-span-2 xl:col-span-2 xl:row-span-1" : ""}`}>
+              <h3 className="font-display text-xl font-extrabold">{group.title}</h3>
+              <ul className={`divide-y divide-line ${group.keys.length > 6 ? "xl:grid xl:grid-cols-2 xl:gap-x-10 xl:items-start xl:[&>li:nth-last-child(-n+2)]:border-b-0" : ""}`}>
+                {group.keys.map((key) => {
+                  const { label } = NUTRIENTS[key];
+                  const range = formatTarget(key, targets[key]);
+                  return (
+                    <li key={key} className="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                      <span className="flex items-center gap-2 font-bold">
+                        {label}
+                        <InfoButton label={`About the ${label.toLowerCase()} range`} anchor="parent">
+                          <b>
+                            {label}: {range} a day.
+                          </b>{" "}
+                          {WHY[key]} {explainTarget(key, profile, targets, today)}
+                        </InfoButton>
+                      </span>
+                      <span className={`tabular-nums ${range.length <= 22 ? "whitespace-nowrap text-right" : "basis-full text-[15px] text-muted"}`}>{range}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Card>
+          ))}
+          {/* Beside Keep under on wide screens, the same height. */}
+          <div className="flex flex-col lg:col-span-2 [&>*]:flex-1">
+            <SampleData data={data} today={today} />
+          </div>
+        </div>
+
         {!firstVisit && (
           <ButtonLink href="/log" className="min-h-12 self-start px-7 text-[17px]">
             Back to your dashboard
           </ButtonLink>
         )}
-        <SampleData data={data} today={today} />
-        </div>
-
-        <div className="flex flex-col gap-5">
-        <h2 className="font-display text-2xl font-extrabold">Your daily ranges</h2>
-        <div className="grid gap-5 lg:grid-cols-2">
-        {NUTRIENT_GROUPS.map((group, index) => (
-          <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]} ${group.keys.length > 6 ? "lg:row-span-2" : ""}`}>
-            <h3 className="font-display text-xl font-extrabold">{group.title}</h3>
-            <ul className="divide-y divide-line">
-              {group.keys.map((key) => {
-                const { label } = NUTRIENTS[key];
-                const range = formatTarget(key, targets[key]);
-                return (
-                  <li key={key} className="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
-                    <span className="flex items-center gap-2 font-bold">
-                      {label}
-                      <InfoButton label={`About the ${label.toLowerCase()} range`} anchor="parent">
-                        <b>
-                          {label}: {range} a day.
-                        </b>{" "}
-                        {WHY[key]} {explainTarget(key, profile, targets, today)}
-                      </InfoButton>
-                    </span>
-                    <span className={`tabular-nums ${range.length <= 22 ? "whitespace-nowrap text-right" : "basis-full text-[15px] text-muted"}`}>{range}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
-        ))}
-        </div>
-        </div>
       </div>
     </>
   );
@@ -109,8 +109,8 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
   const email = user?.primaryEmailAddress?.emailAddress;
 
   return (
-    <section aria-labelledby="details-title" className="flex flex-col gap-4 rounded-card border-[1.5px] border-band bg-celery p-5 shadow-[3px_4px_0_rgb(46_107_63_/_0.18)]">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section aria-labelledby="details-title" className="flex flex-col gap-4 rounded-card border-[1.5px] border-band bg-celery p-5 shadow-[3px_4px_0_rgb(46_107_63_/_0.18)] lg:flex-row lg:items-center lg:gap-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 lg:flex-col lg:items-start lg:justify-start">
         <div className="flex min-w-0 items-center gap-3">
           {/* The same badge as the header's account button, with the name from Clerk. */}
           <InitialsBadge initials={initialsOf(user?.firstName, user?.lastName, email)} photo={user?.hasImage ? user.imageUrl : null} size="large" />
@@ -125,21 +125,23 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
         </ButtonLink>
       </div>
 
-      <dl className="grid grid-cols-3 gap-2.5">
+      <dl className="grid grid-cols-3 gap-2.5 lg:flex">
         {["Height", "Weight", "Age"].map((label) => (
-          <div key={label} className={`rounded-xl border-t-4 bg-paper px-3 py-2.5 ${STAT_ACCENTS[label]}`}>
+          <div key={label} className={`rounded-xl border-t-4 bg-paper px-3 py-2.5 lg:min-w-28 ${STAT_ACCENTS[label]}`}>
             <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{label}</dt>
             <dd className="whitespace-nowrap font-display text-xl font-extrabold leading-tight sm:text-2xl">{stat(label)}</dd>
           </div>
         ))}
       </dl>
 
+      {/* Chips and diet notes: a column of their own from lg, set off by a rule. */}
+      <div className="flex flex-col gap-4 lg:flex-1 lg:border-l lg:border-band lg:pl-8">
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-leaf-tint px-3 py-1 text-sm font-bold">{stat("Sex")}</span>
         <span className="rounded-full bg-lemon-tint px-3 py-1 text-sm font-bold">{stat("Activity")}</span>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-band pt-3">
+      <div className="flex flex-col gap-2 border-t border-band pt-3 lg:border-t-0 lg:pt-0">
         <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-muted">Diet notes</h3>
         {diet.pattern === "everything" && diet.allergies.length === 0 && diet.lifeStage === "none" ? (
           // One link straight to the diet notes in Edit details.
@@ -173,6 +175,7 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
         {diet.lifeStage !== "none" && (
           <p className="text-[13px] text-muted">Your ranges use the official values for pregnancy or breastfeeding. Your doctor or midwife knows best.</p>
         )}
+      </div>
       </div>
     </section>
   );

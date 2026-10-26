@@ -93,31 +93,28 @@ export function WindowView({
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
-      <Card className="flex flex-col gap-4">
-        {detail === "charts" && (
-          <h2 className="font-display text-xl font-extrabold">
-            {formatDay(summary.start)} – {formatDay(summary.end)}
-          </h2>
-        )}
-        <ol className="grid grid-cols-7 gap-1.5 text-center text-xs text-muted">
-          {summary.days.map((day, index) => {
-            const score = dayShare[index];
-            return (
-              <li key={day.date} className="flex flex-col items-center gap-1">
-                <DayBadge state={day.state} share={score?.share ?? null} />
-                <span aria-hidden="true">{formatDay(day.date).slice(0, 3)}</span>
-                <span className="sr-only">
-                  {formatDay(day.date)}: {score ? `${score.inRange} of ${score.known} nutrients in range, ` : ""}
-                  {STATE_LABEL[day.state]}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-        <p className="text-xs text-muted">
-          Green ring: share of that day’s nutrients in range · ✓ mostly in range · Faded: not marked complete · Dashed: not logged
-        </p>
-      </Card>
+      {detail === "bars" && (
+        <Card className="flex flex-col gap-4">
+          <ol className="grid grid-cols-7 gap-1.5 text-center text-xs text-muted">
+            {summary.days.map((day, index) => {
+              const score = dayShare[index];
+              return (
+                <li key={day.date} className="flex flex-col items-center gap-1">
+                  <DayBadge state={day.state} share={score?.share ?? null} />
+                  <span aria-hidden="true">{formatDay(day.date).slice(0, 3)}</span>
+                  <span className="sr-only">
+                    {formatDay(day.date)}: {score ? `${score.inRange} of ${score.known} nutrients in range, ` : ""}
+                    {STATE_LABEL[day.state]}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="text-xs text-muted">
+            Green ring: share of that day’s nutrients in range · ✓ mostly in range · Faded: not marked complete · Dashed: not logged
+          </p>
+        </Card>
+      )}
 
       {detail === "charts" ? (
         <>
