@@ -9,6 +9,7 @@ import { WeekRibbons } from "@/components/WeekRibbons";
 import { DashboardStickers } from "@/components/DashboardStickers";
 import { WeekSummary } from "@/components/WeekSummary";
 import { Button } from "@/components/ui/Button";
+import { DAY_CHIP } from "@/components/ui/DayStatus";
 import { Dialog } from "@/components/ui/Dialog";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { CheckIcon, PlusIcon } from "@/components/ui/icons";
@@ -203,7 +204,7 @@ function DayPicker({ date, today, earliest, onPick }: { date: string; today: str
 function TodayStrip({ data, today, onOpen }: { data: SavedData; today: string; onOpen: () => void }) {
   const { totals, foods } = totalsFor(data.entries.filter((entry) => entry.date === today));
   const marked = data.completeDays.includes(today);
-  const chip = STATE_CHIP[dayState(foods, marked)];
+  const chip = DAY_CHIP[dayState(foods, marked)];
   return (
     <section aria-label="Today" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-card border-l-[6px] border-kraft bg-paper p-3 sm:px-5">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
@@ -242,12 +243,6 @@ function dayName(day: string, today: string): string {
   return formatDay(day);
 }
 
-const STATE_CHIP: Record<DayState, { text: string; className: string }> = {
-  complete: { text: "Complete", className: "bg-leaf text-white" },
-  open: { text: "Not complete", className: "border-[1.5px] border-soil text-soil" },
-  missed: { text: "Not logged", className: "border-[1.5px] border-dashed border-muted text-muted" },
-};
-
 /** One day in the side panel: calories, status, highlights, its foods, and actions. */
 function DayCard({
   data,
@@ -267,7 +262,7 @@ function DayCard({
   const { totals, known, foods } = totalsFor(entries);
   const marked = data.completeDays.includes(date);
   const state: DayState = dayState(foods, marked);
-  const chip = STATE_CHIP[state];
+  const chip = DAY_CHIP[state];
   const Box = inPanel ? "div" : Card;
   const canToggle = foods > 0;
   const showDate = date === today || date === addDays(today, -1);
