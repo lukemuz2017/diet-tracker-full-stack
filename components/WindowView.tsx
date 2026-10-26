@@ -4,6 +4,7 @@ import { MacroSplit, NutrientByDay } from "@/components/HistoryCharts";
 import { NutrientBar } from "@/components/NutrientBar";
 import { WeekCompare, WhereFrom } from "@/components/HistoryInsights";
 import { Card } from "@/components/ui/Card";
+import { GOOD_DAY_SHARE } from "@/lib/activity";
 import { formatDay } from "@/lib/dates";
 import { SCORED_KEYS, statusFor } from "@/lib/log";
 import { withUsual } from "@/lib/usual";
@@ -19,8 +20,6 @@ const STATE_LABEL: Record<DayState, string> = {
   missed: "not logged",
 };
 
-/** A day is marked ✓ when at least this share of its nutrients were in range. */
-const GOOD_DAY_SHARE = 0.8;
 const RING = 2 * Math.PI * 15;
 
 /**

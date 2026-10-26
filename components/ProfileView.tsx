@@ -2,8 +2,9 @@
 
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/Field";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { InitialsBadge } from "@/components/ui/InitialsBadge";
 import { PlusIcon } from "@/components/ui/icons";
@@ -11,13 +12,15 @@ import { DIET_NOTES_ID } from "@/components/SetupForm";
 import { handleOf, initialsOf } from "@/lib/names";
 import { InfoButton } from "@/components/ui/InfoButton";
 import { NUTRIENT_GROUPS, NUTRIENTS, WHY } from "@/lib/nutrients";
-import { addDays, formatDay } from "@/lib/dates";
+import { activitySummary } from "@/lib/activity";
+import { addDays, formatDay, formatShortDay, toISODate } from "@/lib/dates";
 import { ALLERGEN_OPTIONS, LIFE_STAGE_OPTIONS, PATTERN_OPTIONS, dietOf, profileFacts, type Profile, asksLifeStage } from "@/lib/profile";
 import { isSample, SAMPLE_DAYS, withSample, withoutSample } from "@/lib/sample";
 import { updateData, useSavedData, type SavedData } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 import { useToday } from "@/lib/useToday";
 import { withUsual } from "@/lib/usual";
+import { valuesFromProfile, validateSetup } from "@/lib/setup";
 import { computeTargets, explainTarget, formatTarget, maintenanceCalories } from "@/lib/targets";
 
 // Profile: the details you entered, the maintenance estimate they give,
@@ -46,6 +49,7 @@ export function ProfileView() {
           </ButtonLink>
         )}
         <MemberCard profile={profile} today={today} />
+        <ActivityCard data={data} targets={targets} />
 
         <h2 className="mt-2 font-display text-2xl font-extrabold">Your daily ranges</h2>
         <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -90,6 +94,100 @@ export function ProfileView() {
   );
 }
 
+/** Small facts about your use of the app, from your own entries (sample meals don't count). */
+function ActivityCard({ data, targets }: { data: SavedData; targets: ReturnType<typeof computeTargets> }) {
+  const { user } = useUser();
+  const activity = activitySummary(data, targets);
+  const since = user?.createdAt ? formatShortDay(toISODate(user.createdAt)) : "—";
+  const tiles = [
+    { label: "Member since", value: since, note: user?.createdAt ? String(user.createdAt.getFullYear()) : "" },
+    { label: "Days logged", value: String(activity.daysLogged), note: `${activity.completeDays} marked complete` },
+    { label: "Foods logged", value: String(activity.foods), note: "" },
+    { label: "Days on target", value: String(activity.onTargetDays), note: `of ${activity.completeDays} complete ${activity.completeDays === 1 ? "day" : "days"}` },
+  ];
+  return (
+    <section aria-labelledby="activity-title" className="flex flex-col gap-3">
+      <h2 id="activity-title" className="font-display text-2xl font-extrabold">
+        Your activity
+      </h2>
+      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {tiles.map((tile, index) => (
+          <div key={tile.label} className={`rounded-card border-t-4 bg-paper px-4 py-3 ${ACTIVITY_ACCENTS[index]}`}>
+            <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{tile.label}</dt>
+            <dd className="font-display text-2xl font-extrabold leading-tight">{tile.value}</dd>
+            {tile.note && <dd className="text-[13px] text-muted">{tile.note}</dd>}
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+const ACTIVITY_ACCENTS = ["border-leaf", "border-lemon", "border-carrot", "border-leaf"];
+
+/**
+ * Update weight in one step: a small form on the details card. It saves through
+ * the same checks as Edit details, so the ranges recalculate from the new weight.
+ */
+function WeightUpdate({ profile, today }: { profile: Profile; today: string }) {
+  const [editing, setEditing] = useState(false);
+  const [weight, setWeight] = useState("");
+  const [error, setError] = useState<string | undefined>();
+  const openRef = useRef<HTMLButtonElement>(null);
+  const unit = profile.units === "us" ? { short: "lb", long: "pounds" } : { short: "kg", long: "kilograms" };
+
+  function open() {
+    setWeight(valuesFromProfile(profile).weight);
+    setError(undefined);
+    setEditing(true);
+  }
+  function close() {
+    setEditing(false);
+    // The form unmounts, so put focus back on the button that opened it.
+    requestAnimationFrame(() => openRef.current?.focus());
+  }
+  function save(event: FormEvent) {
+    event.preventDefault();
+    const { profile: next, errors } = validateSetup({ ...valuesFromProfile(profile), weight }, today);
+    if (!next) {
+      setError(errors.weight ?? "Couldn’t save. Check the rest of your details in Edit details.");
+      return;
+    }
+    updateData((data) => ({ ...data, profile: next }));
+    showToast("Weight updated. Your ranges now use it.");
+    close();
+  }
+
+  if (!editing) {
+    return (
+      <Button ref={openRef} type="button" variant="quiet" className="self-start" onClick={open}>
+        Update weight
+      </Button>
+    );
+  }
+  return (
+    <form onSubmit={save} noValidate onKeyDown={(event) => event.key === "Escape" && close()} className="flex flex-wrap items-start gap-3">
+      <TextField
+        id="quick-weight"
+        label="New weight"
+        unit={unit}
+        error={error}
+        value={weight}
+        onChange={(event) => setWeight(event.target.value)}
+        inputMode="decimal"
+        autoFocus
+        className="w-52"
+      />
+      <div className="flex items-center gap-2 pt-[1.85rem]">
+        <Button type="submit">Save</Button>
+        <Button type="button" variant="quiet" onClick={close}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 /** Top edges for the range groups: macros, get enough of. */
 const GROUP_ACCENTS = ["border-leaf", "border-lemon", "border-carrot"];
 /** Stat tiles get a colored top edge each, like price cards. */
@@ -125,14 +223,17 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
         </ButtonLink>
       </div>
 
-      <dl className="grid grid-cols-3 gap-2.5 lg:flex">
-        {["Height", "Weight", "Age"].map((label) => (
-          <div key={label} className={`rounded-xl border-t-4 bg-paper px-3 py-2.5 lg:min-w-28 ${STAT_ACCENTS[label]}`}>
-            <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{label}</dt>
-            <dd className="whitespace-nowrap font-display text-xl font-extrabold leading-tight sm:text-2xl">{stat(label)}</dd>
-          </div>
-        ))}
-      </dl>
+      <div className="flex flex-col gap-2">
+        <dl className="grid grid-cols-3 gap-2.5 lg:flex">
+          {["Height", "Weight", "Age"].map((label) => (
+            <div key={label} className={`rounded-xl border-t-4 bg-paper px-3 py-2.5 lg:min-w-28 ${STAT_ACCENTS[label]}`}>
+              <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">{label}</dt>
+              <dd className="whitespace-nowrap font-display text-xl font-extrabold leading-tight sm:text-2xl">{stat(label)}</dd>
+            </div>
+          ))}
+        </dl>
+        <WeightUpdate profile={profile} today={today} />
+      </div>
 
       {/* Chips and diet notes: a column of their own from lg, set off by a rule. */}
       <div className="flex flex-col gap-4 lg:flex-1 lg:border-l lg:border-band lg:pl-8">
