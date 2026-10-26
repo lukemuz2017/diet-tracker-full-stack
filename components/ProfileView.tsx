@@ -10,7 +10,6 @@ import { PlusIcon } from "@/components/ui/icons";
 import { DIET_NOTES_ID } from "@/components/SetupForm";
 import { handleOf, initialsOf } from "@/lib/names";
 import { InfoButton } from "@/components/ui/InfoButton";
-import { formatValue } from "@/lib/log";
 import { NUTRIENT_GROUPS, NUTRIENTS, WHY } from "@/lib/nutrients";
 import { addDays, formatDay } from "@/lib/dates";
 import { ALLERGEN_OPTIONS, LIFE_STAGE_OPTIONS, PATTERN_OPTIONS, dietOf, profileFacts, type Profile, asksLifeStage } from "@/lib/profile";
@@ -57,14 +56,7 @@ export function ProfileView() {
         </div>
 
         <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-2xl font-extrabold">Your daily ranges</h2>
-          {/* The maintenance estimate lives here, with the ranges it sets. */}
-          <p className="text-[15px] text-muted">
-            Built around <b className="text-soil">about {formatValue(Math.round(maintenanceCalories(profile, today) / 10) * 10)} kcal a day</b>,
-            the estimate to keep your weight steady.
-          </p>
-        </div>
+        <h2 className="font-display text-2xl font-extrabold">Your daily ranges</h2>
         <div className="grid gap-5 lg:grid-cols-2">
         {NUTRIENT_GROUPS.map((group, index) => (
           <Card key={group.title} className={`flex flex-col gap-1 border-t-[6px] ${GROUP_ACCENTS[index]} ${group.keys.length > 6 ? "lg:row-span-2" : ""}`}>
