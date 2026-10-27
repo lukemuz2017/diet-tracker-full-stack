@@ -56,15 +56,28 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
     <div className="flex flex-col gap-4">
       {/* The two averages and what changed. */}
       <div className="flex flex-col gap-1.5">
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
-          <span>
-            <b>{range(current)}</b> {average(current.averages[key])}
-          </span>
-          <span className="text-muted">
-            <b>{range(previous)}</b> {average(previous.averages[key])}
-          </span>
-          {row && <ChangeCell row={row} />}
-        </p>
+        {/* One row per week: its line, dates and average. These rows are also the chart's legend. */}
+        <ul className="flex flex-col gap-1 text-[15px]">
+          {[
+            { summary: current, dashed: false },
+            { summary: previous, dashed: true },
+          ].map(({ summary, dashed }) => (
+            <li key={summary.end} className={`flex items-center gap-3 ${dashed ? "text-muted" : ""}`}>
+              <svg width="26" height="10" aria-hidden="true" className="flex-none">
+                <path d="M1 5h24" stroke={dashed ? "var(--color-faded)" : "var(--color-soil)"} strokeWidth="2" strokeDasharray={dashed ? "5 4" : undefined} />
+                {!dashed && <circle cx="13" cy="5" r="3.5" fill="var(--color-soil)" />}
+              </svg>
+              <b className="w-40 flex-none font-bold">{range(summary)}</b>
+              <span className="tabular-nums">{average(summary.averages[key])}</span>
+            </li>
+          ))}
+        </ul>
+        {row && (
+          <p className="flex flex-wrap items-center gap-2 text-[15px]">
+            <ChangeCell row={row} />
+            <span className="text-[13px] text-muted">from the earlier week to the later one</span>
+          </p>
+        )}
         {!comparison.ready && (
           <p className="text-[13px] text-muted">
             Comparing the averages needs at least {COMPARE_MIN_DAYS} complete days in each week. {range(current)} has {comparison.current}, {range(previous)} has{" "}
@@ -72,7 +85,7 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
           </p>
         )}
         <p className="text-[13px] text-muted">
-          Shaded band: {formatTarget(key, target)}. The change is from the earlier week to the later one; averages are of the complete days in each.
+          Shaded band: {formatTarget(key, target)}. Averages are of the complete days in each week.
         </p>
       </div>
 
@@ -128,19 +141,6 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
       </ol>
 
       <p className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <svg width="26" height="10" aria-hidden="true">
-            <path d="M1 5h24" stroke="var(--color-soil)" strokeWidth="2" />
-            <circle cx="13" cy="5" r="3.5" fill="var(--color-soil)" />
-          </svg>
-          {range(current)}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <svg width="26" height="10" aria-hidden="true">
-            <path d="M1 5h24" stroke="var(--color-faded)" strokeWidth="2" strokeDasharray="5 4" />
-          </svg>
-          {range(previous)}
-        </span>
         <span>Hollow dot: not marked complete</span>
       </p>
 
