@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { Card } from "@/components/ui/Card";
+import { useEffect, useRef, useState } from "react";
 import { formatDay, formatShortDay } from "@/lib/dates";
 import { formatValue, statusFor } from "@/lib/log";
-import { NUTRIENT_GROUPS, NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
+import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
 import { formatTarget, type Target, type Targets } from "@/lib/targets";
 import { runningAverages, type WindowSummary } from "@/lib/week";
 
@@ -84,11 +83,9 @@ function RunningLine({ running, top, width, height, unit }: { running: (number |
   );
 }
 
-/** One nutrient for each of the 7 days against its target (shaded band); a menu picks the nutrient. */
-export function NutrientByDay({ summary, targets }: { summary: WindowSummary; targets: Targets }) {
+/** One nutrient for each of the 7 days against its target (shaded band), with the running average over the bars. */
+export function NutrientByDay({ summary, targets, nutrient: key }: { summary: WindowSummary; targets: Targets; nutrient: NutrientKey }) {
   const [active, setActive] = useState<string | null>(null);
-  const [key, setKey] = useState<NutrientKey>("calories");
-  const selectId = useId();
   const target = targets[key];
   const { label, unit } = NUTRIENTS[key];
   const values = summary.days.map((day) => day.totals[key] ?? 0);
@@ -102,37 +99,11 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
   };
 
   return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div>
-          <h2 className="font-display text-xl font-extrabold">{label} by day</h2>
-          <span className="text-[13px] text-muted">
-            Shaded band: {BAND_WORDS[target.kind]}, {formatTarget(key, target)}
-            {target.upper !== undefined && ` (safe upper limit ${formatValue(target.upper)} ${unit})`}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor={selectId} className="text-sm font-bold">
-            Nutrient
-          </label>
-          <select
-            id={selectId}
-            value={key}
-            onChange={(event) => setKey(event.target.value as NutrientKey)}
-            className="field-box min-h-11 rounded-field border-[1.5px] border-field bg-white px-3 text-[15px]"
-          >
-            {NUTRIENT_GROUPS.map((group) => (
-              <optgroup key={group.title} label={group.title}>
-                {group.keys.map((option) => (
-                  <option key={option} value={option}>
-                    {NUTRIENTS[option].label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      <p className="text-[13px] text-muted">
+        Shaded band: {BAND_WORDS[target.kind]}, {formatTarget(key, target)}
+        {target.upper !== undefined && ` (safe upper limit ${formatValue(target.upper)} ${unit})`}
+      </p>
 
       <div className="relative h-52 pl-12" aria-hidden="true">
         {/* Band and its edge labels */}
@@ -228,6 +199,6 @@ export function NutrientByDay({ summary, targets }: { summary: WindowSummary; ta
         </table>
         </div>
       </details>
-    </Card>
+    </div>
   );
 }

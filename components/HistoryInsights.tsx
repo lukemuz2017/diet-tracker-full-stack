@@ -1,6 +1,5 @@
 "use client";
 
-import { useId, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { addDays, formatShortDay } from "@/lib/dates";
 import { compareWeeks, topSources, COMPARE_MIN_DAYS, type ComparisonRow, type Tone } from "@/lib/insights";
@@ -14,53 +13,22 @@ import { WINDOW_DAYS, type WindowSummary } from "@/lib/week";
 // how this week compares with last week. The numbers are worked out in
 // lib/insights.ts.
 
-/** Nutrients to start on, in order: a few foods usually explain most of these. */
-const STARTERS: NutrientKey[] = ["sodium", "fiber", "protein", "calories"];
-
 /** Which foods gave the most of a nutrient, over the days that count. */
-export function WhereFrom({ data, summary }: { data: SavedData; summary: WindowSummary }) {
-  const [chosen, setChosen] = useState<NutrientKey | null>(null);
-  const selectId = useId();
+export function WhereFrom({ data, summary, nutrient: key }: { data: SavedData; summary: WindowSummary; nutrient: NutrientKey }) {
   const counted = new Set(summary.days.filter((day) => day.state === "complete").map((day) => day.date));
-  // Until a nutrient is picked, start with one where the answer is interesting
-  // (a few foods behind most of it) rather than calories, which come from everything.
-  const key = chosen ?? STARTERS.find((starter) => topSources(data.entries, counted, starter).total > 0) ?? "calories";
   const { label, unit } = NUTRIENTS[key];
   const { total, items, otherShare } = topSources(data.entries, counted, key);
   const perDay = (value: number) => formatValue(value / counted.size);
 
-  return (
-    <Card className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="font-display text-xl font-extrabold">Where it came from</h2>
-          <p className="text-[15px] text-muted">
-            The foods behind a nutrient, over the {counted.size} {counted.size === 1 ? "day" : "days"} that count.
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={selectId} className="text-[13px] font-bold">
-            Nutrient
-          </label>
-          <select
-            id={selectId}
-            value={key}
-            onChange={(event) => setChosen(event.target.value as NutrientKey)}
-            className="h-11 rounded-field border-[1.5px] border-field bg-white px-3 text-[15px]"
-          >
-            {NUTRIENT_GROUPS.map((group) => (
-              <optgroup key={group.title} label={group.title}>
-                {group.keys.map((option) => (
-                  <option key={option} value={option}>
-                    {NUTRIENTS[option].label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-      </div>
+  if (counted.size === 0) {
+    return <p className="text-[15px]">No complete days in this week yet, so there’s nothing to add up. Mark a day complete on the Dashboard.</p>;
+  }
 
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[15px] text-muted">
+        The foods behind your {label.toLowerCase()}, over the {counted.size} {counted.size === 1 ? "day" : "days"} that count.
+      </p>
       {total === 0 ? (
         <p className="text-[15px]">
           None of the foods in these days list {label.toLowerCase()} yet. Foods you add yourself only have what you type in, and meals logged before
@@ -70,7 +38,7 @@ export function WhereFrom({ data, summary }: { data: SavedData; summary: WindowS
         <>
           <ol aria-label={`Foods that gave the most ${label.toLowerCase()}`} className="flex flex-col gap-3">
             {items.map((item) => (
-              <li key={item.name} className="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)_9rem] sm:items-center">
+              <li key={item.name} className="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_9rem] sm:items-center">
                 <span className="truncate font-bold" title={item.name}>
                   {item.name}
                 </span>
@@ -86,7 +54,7 @@ export function WhereFrom({ data, summary }: { data: SavedData; summary: WindowS
           {otherShare >= 1 && <p className="text-[13px] text-muted">Everything else: {Math.round(otherShare)}%.</p>}
         </>
       )}
-    </Card>
+    </div>
   );
 }
 

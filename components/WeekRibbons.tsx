@@ -2,6 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import { NutrientBar } from "@/components/NutrientBar";
+import { NutrientChartsDialog, type ChartTab } from "@/components/NutrientCharts";
+import { Button } from "@/components/ui/Button";
 import { InfoButton } from "@/components/ui/InfoButton";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { DayBadge } from "@/components/WindowView";
@@ -66,6 +68,8 @@ export function WeekRibbons({
   onOpenDay: (date: string) => void;
 }) {
   const [expanded, setExpanded] = useState<NutrientKey | null>(null);
+  // The charts pop-up: which nutrient, and which tab it opens on.
+  const [chart, setChart] = useState<{ nutrient: NutrientKey; tab: ChartTab } | null>(null);
   // Phone paging: the first of the PHONE_DAYS days shown, starting on the newest.
   const lastStart = WINDOW_DAYS - PHONE_DAYS;
   const [pageStart, setPageStart] = useState(lastStart);
@@ -220,7 +224,7 @@ export function WeekRibbons({
                 {open && (
                   // Pinned and screen-wide, so the detail doesn't scroll sideways with the days.
                   <div className="sticky left-0" style={visibleWidth ? { width: visibleWidth } : undefined}>
-                    <NutrientDetail data={data} nutrientKey={key} summary={summary} targets={targets} />
+                    <NutrientDetail data={data} nutrientKey={key} summary={summary} targets={targets} onOpenChart={(tab) => setChart({ nutrient: key, tab })} />
                   </div>
                 )}
               </Fragment>
@@ -238,6 +242,8 @@ export function WeekRibbons({
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm border-[1.5px] border-dashed border-field align-[-2px]" />Not logged</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-kraft align-[-2px]" />Not marked complete</span>
       </div>
+
+      <NutrientChartsDialog chart={chart} onClose={() => setChart(null)} data={data} profile={profile} today={today} initialEnd={end} />
     </div>
   );
 }
@@ -248,11 +254,13 @@ function NutrientDetail({
   nutrientKey,
   summary,
   targets,
+  onOpenChart,
 }: {
   data: SavedData;
   nutrientKey: NutrientKey;
   summary: ReturnType<typeof summarizeWindow>;
   targets: ReturnType<typeof computeTargets>;
+  onOpenChart: (tab: ChartTab) => void;
 }) {
   const { label, unit } = NUTRIENTS[nutrientKey];
 
@@ -280,6 +288,15 @@ function NutrientDetail({
       <div className="flex flex-col gap-1 lg:col-start-2 lg:row-start-1">
         <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Why it matters</h4>
         <p className="text-sm text-muted">{WHY[nutrientKey]}</p>
+        {/* Charts for this nutrient open in a pop-up, with a week to pick. */}
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => onOpenChart("trend")} aria-label={`See the ${label.toLowerCase()} trend`}>
+            Trend
+          </Button>
+          <Button variant="secondary" onClick={() => onOpenChart("sources")} aria-label={`See where your ${label.toLowerCase()} came from`}>
+            Sources
+          </Button>
+        </div>
       </div>
       <table className="w-full text-sm lg:col-start-1 lg:row-start-1">
         <caption className="sr-only">{label} each day and the food that gave the most. Grayed days aren’t marked complete, so they’re left out of the average.</caption>
