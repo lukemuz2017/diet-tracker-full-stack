@@ -1,6 +1,7 @@
 // The built-in common foods (static data, no API). Values come from USDA
 // FoodData Central, per the serving shown; see lib/foods-data.ts.
 
+import { GRAMS_PER_OZ } from "./units.ts";
 import { PORTION, type AmountSpec } from "./amounts.ts";
 import { FOOD_DATA } from "./foods-data.ts";
 import type { Nutrients } from "./nutrients.ts";
@@ -125,14 +126,23 @@ const AMOUNTS: Record<string, AmountSpec> = {
 /** Saved recipes are logged by the serving. */
 export const RECIPE_SERVINGS: AmountSpec = { base: 1, one: "serving", many: "servings", choices: [0.5, 1, 1.5, 2, 3] };
 
-/** Foods from USDA search are weighed: their values are per 100 g. */
-export const USDA_GRAMS: AmountSpec = {
-  base: 100,
-  one: "g",
-  many: "g",
-  choices: [25, 50, 75, 100, 150, 200, 250, 300],
-  note: "100 g is about 3½ ounces",
+export { GRAMS_PER_OZ };
+
+/**
+ * Foods from USDA search are weighed, in ounces. USDA's values are per 100 g
+ * (3.53 oz), so an entry still stores a multiple of 100 g and nothing already
+ * saved changes; only the unit shown is ounces.
+ */
+export const USDA_WEIGHT: AmountSpec = {
+  base: 100 / GRAMS_PER_OZ,
+  one: "oz",
+  many: "oz",
+  choices: [1, 2, 3, 4, 5, 6, 8, 10, 12],
+  note: "1 ounce is about 28 g",
 };
+
+/** The amount a weighed USDA food starts at when it has no household portion. */
+const DEFAULT_OZ = 4;
 
 // A USDA food's household portions ("1 container (6 oz)" = 170 g), by food id
 // ("usda:171284"). Filled from saved foods when they load and from search
@@ -141,19 +151,22 @@ const usdaPortions = new Map<string, AmountSpec>();
 
 export function rememberPortions(foodId: string, portions: { label: string; grams: number }[] | undefined) {
   if (!portions?.length || usdaPortions.has(foodId)) return;
-  usdaPortions.set(foodId, { ...USDA_GRAMS, named: portions.map((portion) => ({ quantity: portion.grams, label: portion.label })) });
+  usdaPortions.set(foodId, {
+    ...USDA_WEIGHT,
+    named: portions.map((portion) => ({ quantity: Math.round((portion.grams / GRAMS_PER_OZ) * 1000) / 1000, label: portion.label })),
+  });
 }
 
-/** What a USDA food starts at when picked: its first "1 …" portion, else 100 g (as a multiple of 100 g). */
+/** What a USDA food starts at when picked: its first "1 …" portion, else 4 oz (both as a multiple of 100 g). */
 export function startingMultiple(portions: { label: string; grams: number }[] | undefined): number {
   const portion = portions?.find((item) => item.label.startsWith("1 ")) ?? portions?.[0];
-  return portion ? portion.grams / USDA_GRAMS.base : 1;
+  return portion ? portion.grams / 100 : (DEFAULT_OZ * GRAMS_PER_OZ) / 100;
 }
 
-/** The unit a food is measured in; recipes are servings, USDA foods grams, custom foods portions. */
+/** The unit a food is measured in; recipes are servings, USDA foods ounces, custom foods portions. */
 export function amountFor(foodId: string | undefined): AmountSpec {
   if (foodId?.startsWith("recipe:")) return RECIPE_SERVINGS;
-  if (foodId?.startsWith("usda:")) return usdaPortions.get(foodId) ?? USDA_GRAMS;
+  if (foodId?.startsWith("usda:")) return usdaPortions.get(foodId) ?? USDA_WEIGHT;
   return (foodId && AMOUNTS[foodId]) || PORTION;
 }
 

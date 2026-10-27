@@ -16,7 +16,7 @@ export interface AmountSpec {
   bare?: boolean;
   /**
    * Household portions with their amount in this unit, e.g. "1 container
-   * (6 oz)" = 170 (grams). Offered before `choices`, and shown by name.
+   * (6 oz)" = 6 (ounces) for a weighed food. Offered before `choices`, and shown by name.
    */
   named?: { quantity: number; label: string }[];
 }

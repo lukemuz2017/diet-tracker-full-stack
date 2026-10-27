@@ -4,6 +4,7 @@
 
 import { formatQuantity } from "./amounts.ts";
 import type { NutrientKey, Nutrients } from "./nutrients.ts";
+import { GRAMS_PER_LB, GRAMS_PER_OZ, ML_PER_FL_OZ } from "./units.ts";
 
 /** A household portion from USDA's food details, e.g. "1 container (6 oz)" = 170 g. */
 export interface Portion {
@@ -61,6 +62,52 @@ interface RawFood {
   foodNutrients?: RawNutrient[];
 }
 
+const oneDecimal = (value: number) => String(Math.round(value * 10) / 10);
+
+/**
+ * A portion label in US units: "60 milliliter" becomes "2 fl oz", "240 g" "8.5 oz",
+ * and "tablespoon" and "fluid ounce" are shortened. Anything else is left as USDA wrote it.
+ */
+export function tidyLabel(label: string): string {
+  const number = "(\\d+(?:\\.\\d+)?)";
+  return label
+    .replace(new RegExp(`${number}\\s*(?:milliliters?|millilitres?|ml)\\b`, "gi"), (_, n) => `${oneDecimal(Number(n) / ML_PER_FL_OZ)} fl oz`)
+    .replace(new RegExp(`${number}\\s*(?:liters?|litres?)\\b`, "gi"), (_, n) => `${oneDecimal((Number(n) * 1000) / ML_PER_FL_OZ)} fl oz`)
+    .replace(new RegExp(`${number}\\s*(?:kilograms?|kg)\\b`, "gi"), (_, n) => `${oneDecimal((Number(n) * 1000) / GRAMS_PER_LB)} lb`)
+    .replace(new RegExp(`${number}\\s*(?:grams?|g)\\b`, "gi"), (_, n) => `${oneDecimal(Number(n) / GRAMS_PER_OZ)} oz`)
+    .replace(/\bfluid ounces?\b/gi, "fl oz")
+    .replace(/\btablespoons?\b/gi, "tbsp")
+    .replace(/\bteaspoons?\b/gi, "tsp")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Simple foods whose USDA names put the food first and the kind second
+// ("Syrup, maple") and read better the other way round ("Maple syrup").
+const KIND_AFTER_FOOD = new Set(["syrup", "cheese", "milk", "oil", "bread", "beans", "rice", "flour", "butter", "cream", "sauce", "tea", "coffee", "pasta"]);
+
+/**
+ * A USDA description made easier to read: filler like ", NFS" removed, SHOUTING
+ * lowercased, and "Syrup, maple, Canadian" turned into "Maple syrup, Canadian"
+ * for the simple foods above. Best effort: anything else is kept as USDA wrote it.
+ */
+export function tidyName(description: string): string {
+  let name = description
+    .replace(/\s+/g, " ")
+    .replace(/,\s*NFS\b/gi, "")
+    .replace(/\s*\(NFS\)/gi, "")
+    .replace(/,\s*NS as to [^,]*/gi, "")
+    .replace(/\s*\(Includes[^)]*\)/gi, "")
+    .replace(/[,\s]+$/, "")
+    .trim();
+  if (/[A-Z]/.test(name) && name === name.toUpperCase()) name = name.toLowerCase();
+  const parts = name.split(", ");
+  if (parts.length >= 2 && KIND_AFTER_FOOD.has(parts[0].toLowerCase()) && /^[a-z]+(?:-[a-z]+)?$/.test(parts[1])) {
+    name = [`${parts[1]} ${parts[0].toLowerCase()}`, ...parts.slice(2)].join(", ");
+  }
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 function nutrientsOf(raw: RawNutrient[]): Nutrients {
   const nutrients: Nutrients = {};
   for (const item of raw) {
@@ -99,7 +146,7 @@ export function foodsFromSearch(response: unknown): UsdaFood[] {
     seen.add(raw.fdcId);
     result.push({
       fdcId: raw.fdcId,
-      name: raw.description.trim(),
+      name: tidyName(raw.description),
       ...(raw.foodCategory ? { category: raw.foodCategory } : {}),
       per100g,
     });
@@ -144,7 +191,8 @@ export function portionsFrom(food: unknown): Portion[] {
   const seen = new Set<string>();
   const portions: Portion[] = [];
   for (const item of raw as RawPortion[]) {
-    const label = portionLabel(item ?? {});
+    const rawLabel = portionLabel(item ?? {});
+    const label = rawLabel ? tidyLabel(rawLabel) : null;
     const grams = item?.gramWeight;
     if (!label || label.length > 40 || typeof grams !== "number" || grams <= 0) continue;
     const key = label.toLowerCase();

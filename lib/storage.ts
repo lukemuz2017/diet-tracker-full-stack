@@ -34,7 +34,7 @@ export interface Entry {
   createdAt: string;
 }
 
-/** A food saved from USDA search (my_foods, kind "usda"). Logged in grams. */
+/** A food saved from USDA search (my_foods, kind "usda"). Logged in ounces or household portions. */
 export interface SavedFood {
   id: string;
   fdcId: number;
