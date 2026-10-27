@@ -3,7 +3,6 @@
 import { HistoryDays } from "@/components/HistoryDays";
 import { NutrientBar } from "@/components/NutrientBar";
 import { Card } from "@/components/ui/Card";
-import { Disclosure } from "@/components/ui/Disclosure";
 import { GOOD_DAY_SHARE } from "@/lib/activity";
 import { formatDay } from "@/lib/dates";
 import { SCORED_KEYS, statusFor } from "@/lib/log";
@@ -116,11 +115,7 @@ export function WindowView({
       )}
 
       {detail === "charts" ? (
-        <>
-          <Disclosure title="Days">
-            <HistoryDays entries={data.entries} summary={summary} />
-          </Disclosure>
-        </>
+        <HistoryDays entries={data.entries} summary={summary} />
       ) : summary.counted === 0 ? (
         <Card>
           <p className="text-[15px]">

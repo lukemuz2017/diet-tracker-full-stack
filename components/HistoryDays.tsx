@@ -21,6 +21,7 @@ export function HistoryDays({ entries, summary }: { entries: Entry[]; summary: W
 
   return (
     <Card className="flex flex-col py-2">
+      <h2 className="sr-only">Days</h2>
       <ol className="flex flex-col divide-y divide-line">
         {[...summary.days].reverse().map((day) => {
           const chip = DAY_CHIP[day.state];

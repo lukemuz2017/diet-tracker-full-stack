@@ -296,6 +296,9 @@ function NutrientDetail({
           <Button variant="secondary" onClick={() => onOpenChart("sources")} aria-label={`See where your ${label.toLowerCase()} came from`}>
             Sources
           </Button>
+          <Button variant="secondary" onClick={() => onOpenChart("compare")} aria-label={`Compare this week's ${label.toLowerCase()} with last week's`}>
+            Compare weeks
+          </Button>
         </div>
       </div>
       <table className="w-full text-sm lg:col-start-1 lg:row-start-1">

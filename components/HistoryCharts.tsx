@@ -14,7 +14,7 @@ const STATUS_FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carr
 const STATE_WORDS = { complete: "", open: " · not marked complete, not counted", missed: "" } as const;
 
 /** Where the shaded "good" band sits for a target, and which edges get a label. */
-function bandFor(target: Target, values: number[]) {
+export function bandFor(target: Target, values: number[]) {
   // A "usual" target (cholesterol) with no history yet has no band: just the values.
   if (target.kind === "usual" && target.max === undefined) {
     return { top: Math.max(1, ...values) * 1.12, from: 0, to: 0, edges: [] as number[] };
@@ -35,7 +35,7 @@ const BAND_WORDS: Record<Target["kind"], string> = { range: "your range", min: "
 const COLUMN_GAP = 8;
 
 /** The plot's size in pixels, kept current as the page resizes. */
-function useSize<T extends HTMLElement>() {
+export function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {

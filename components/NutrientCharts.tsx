@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { NutrientByDay } from "@/components/HistoryCharts";
 import { WhereFrom } from "@/components/HistoryInsights";
+import { NutrientCompare } from "@/components/NutrientCompare";
 import { WeekCalendar } from "@/components/WeekCalendar";
 import { Dialog } from "@/components/ui/Dialog";
 import { addDays, formatShortDay } from "@/lib/dates";
@@ -14,14 +15,15 @@ import { withUsual } from "@/lib/usual";
 import { WINDOW_DAYS, summarizeWindow } from "@/lib/week";
 
 // The charts for one nutrient, in a pop-up opened from the Dashboard's nutrient
-// detail: how it moved day by day, which foods it came from. A week control
+// detail: how it moved day by day, which foods it came from, and how this week compares with last. A week control
 // goes back to earlier weeks without moving the Dashboard.
 
-export type ChartTab = "trend" | "sources";
+export type ChartTab = "trend" | "sources" | "compare";
 
 const TABS: { value: ChartTab; label: string }[] = [
   { value: "trend", label: "Trend" },
   { value: "sources", label: "Sources" },
+  { value: "compare", label: "Compare weeks" },
 ];
 
 export function NutrientChartsDialog({
@@ -146,8 +148,10 @@ function ChartsBody({
 
       {tab === "trend" ? (
         <NutrientByDay summary={summary} targets={targets} nutrient={nutrient} />
-      ) : (
+      ) : tab === "sources" ? (
         <WhereFrom data={data} summary={summary} nutrient={nutrient} />
+      ) : (
+        <NutrientCompare data={data} targets={targets} end={end} nutrient={nutrient} />
       )}
     </div>
   );
