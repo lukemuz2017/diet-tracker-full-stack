@@ -49,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${bricolage.variable} ${atkinson.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <ClerkProvider appearance={clerkAppearance} signInUrl="/sign-in" signUpUrl="/sign-up">
+        <ClerkProvider appearance={clerkAppearance} signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
           <a
             href="#main"
             className="sr-only rounded-full bg-soil px-4 py-2 font-bold text-paper focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-30"
