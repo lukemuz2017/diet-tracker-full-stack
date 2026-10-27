@@ -11,6 +11,7 @@ import { WeekSummary } from "@/components/WeekSummary";
 import { Button } from "@/components/ui/Button";
 import { DAY_CHIP } from "@/components/ui/DayStatus";
 import { Dialog } from "@/components/ui/Dialog";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { Card, PageHeader } from "@/components/ui/Card";
 import { CheckIcon, PlusIcon } from "@/components/ui/icons";
 import { changeServings, removeEntry, setDayComplete } from "@/lib/actions";
@@ -268,6 +269,7 @@ function DayCard({
   const showDate = date === today || date === addDays(today, -1);
   const detailsId = useId();
   const showDetails = true;
+  const [showTotals, setShowTotals] = useState(false);
   const { wins, headsUp } = dayHighlights(totals, withUsual(computeTargets(data.profile!, today), data, date));
   const shortName = date === today ? "Today" : date === addDays(today, -1) ? "Yesterday" : weekdayName(date);
 
@@ -320,34 +322,32 @@ function DayCard({
 
       {showDetails && (
         <div id={detailsId} className="flex flex-col gap-3">
-          <MealSections entries={entries} onAdd={onAdd} />
-          {foods > 0 && (
-          <details className="group">
-            <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-leaf">
-              <span className="group-open:hidden">Show this day’s totals</span>
-              <span className="hidden group-open:inline">Hide totals</span>
-            </summary>
-            <table className="w-full max-w-md text-[15px]">
-              <caption className="sr-only">Totals for {formatDay(date)}</caption>
-              <tbody className="divide-y divide-line">
-                {NUTRIENT_GROUPS.flatMap((group) => group.keys)
-                  .filter((key) => key !== "calories")
-                  .map((key) => (
-                    <tr key={key}>
-                      <th scope="row" className="py-1.5 pr-3 text-left font-bold">
-                        {NUTRIENTS[key].label}
-                      </th>
-                      <td className="py-1.5 text-right tabular-nums">
-                        {totals[key] === undefined ? "–" : `${formatValue(totals[key]!)} ${NUTRIENTS[key].unit}`}
-                        {totals[key] !== undefined && known[key] < foods && (
-                          <span className="block text-xs text-muted">from {known[key]} of {foods} foods</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </details>
+          {foods > 0 && <ViewToggle onToggle={() => setShowTotals(!showTotals)}>{showTotals ? "See meals" : "Show this day’s totals"}</ViewToggle>}
+          {/* The meals stay mounted (hidden) so the ones you opened are still open when you come back. */}
+          <div hidden={foods > 0 && showTotals}>
+            <MealSections entries={entries} onAdd={onAdd} />
+          </div>
+          {foods > 0 && showTotals && (
+          <table className="w-full max-w-md text-[15px]">
+            <caption className="sr-only">Totals for {formatDay(date)}</caption>
+            <tbody className="divide-y divide-line">
+              {NUTRIENT_GROUPS.flatMap((group) => group.keys)
+                .filter((key) => key !== "calories")
+                .map((key) => (
+                  <tr key={key}>
+                    <th scope="row" className="py-1.5 pr-3 text-left font-bold">
+                      {NUTRIENTS[key].label}
+                    </th>
+                    <td className="py-1.5 text-right tabular-nums">
+                      {totals[key] === undefined ? "–" : `${formatValue(totals[key]!)} ${NUTRIENTS[key].unit}`}
+                      {totals[key] !== undefined && known[key] < foods && (
+                        <span className="block text-xs text-muted">from {known[key]} of {foods} foods</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
           )}
         </div>
       )}

@@ -92,7 +92,7 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
         </p>
       </div>
 
-      <ViewToggle asTable={asTable} onToggle={() => setAsTable(!asTable)} />
+      <ViewToggle onToggle={() => setAsTable(!asTable)}>{asTable ? "Show as a chart" : "Show as a table"}</ViewToggle>
 
       <div hidden={asTable} className="flex flex-col gap-4">
       <div className="relative h-52 pl-12" aria-hidden="true">
