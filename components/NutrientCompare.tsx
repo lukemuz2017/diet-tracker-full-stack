@@ -10,8 +10,8 @@ import type { SavedData } from "@/lib/storage";
 import { formatTarget, type Targets } from "@/lib/targets";
 import { WINDOW_DAYS, summarizeWindow, type WindowDay } from "@/lib/week";
 
-// The same nutrient over two weeks: this week's seven days drawn over last
-// week's, matched by weekday, against the target band. Hollow dots are days
+// The same nutrient over two weeks: the picked week's seven days drawn over the
+// week before, matched by weekday, against the target band. Hollow dots are days
 // that aren't marked complete (they don't count in the averages).
 
 /** Points for one week, as pixel positions; a day with no value breaks the line. */
@@ -58,21 +58,21 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
       <div className="flex flex-col gap-1.5">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
           <span>
-            <b>This week</b> {average(current.averages[key])}
+            <b>{range(current)}</b> {average(current.averages[key])}
           </span>
           <span className="text-muted">
-            <b>Last week</b> {average(previous.averages[key])}
+            <b>{range(previous)}</b> {average(previous.averages[key])}
           </span>
           {row && <ChangeCell row={row} />}
         </p>
         {!comparison.ready && (
           <p className="text-[13px] text-muted">
-            Comparing the averages needs at least {COMPARE_MIN_DAYS} complete days in each week. This week has {comparison.current}, the week before has{" "}
+            Comparing the averages needs at least {COMPARE_MIN_DAYS} complete days in each week. {range(current)} has {comparison.current}, {range(previous)} has{" "}
             {comparison.previous}.
           </p>
         )}
         <p className="text-[13px] text-muted">
-          Shaded band: {formatTarget(key, target)}. Averages are of the complete days in each week.
+          Shaded band: {formatTarget(key, target)}. The change is from the earlier week to the later one; averages are of the complete days in each.
         </p>
       </div>
 
@@ -133,13 +133,13 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
             <path d="M1 5h24" stroke="var(--color-soil)" strokeWidth="2" />
             <circle cx="13" cy="5" r="3.5" fill="var(--color-soil)" />
           </svg>
-          This week ({range(current)})
+          {range(current)}
         </span>
         <span className="inline-flex items-center gap-1.5">
           <svg width="26" height="10" aria-hidden="true">
             <path d="M1 5h24" stroke="var(--color-faded)" strokeWidth="2" strokeDasharray="5 4" />
           </svg>
-          Last week ({range(previous)})
+          {range(previous)}
         </span>
         <span>Hollow dot: not marked complete</span>
       </p>
@@ -149,7 +149,7 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
         <div className="overflow-x-auto">
           <table className="w-full min-w-[26rem] text-[15px]">
             <caption className="sr-only">
-              {label} each weekday, this week against last week
+              {label} each weekday, {range(current)} against {range(previous)}
             </caption>
             <thead>
               <tr className="text-left text-[13px] text-muted">
@@ -157,10 +157,10 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
                   Weekday
                 </th>
                 <th scope="col" className="whitespace-nowrap py-2 pl-4 text-right font-normal">
-                  Last week ({unit})
+                  {range(previous)} ({unit})
                 </th>
                 <th scope="col" className="whitespace-nowrap py-2 pl-4 text-right font-normal">
-                  This week ({unit})
+                  {range(current)} ({unit})
                 </th>
               </tr>
             </thead>

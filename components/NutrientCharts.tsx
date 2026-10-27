@@ -15,7 +15,7 @@ import { withUsual } from "@/lib/usual";
 import { WINDOW_DAYS, summarizeWindow } from "@/lib/week";
 
 // The charts for one nutrient, in a pop-up opened from the Dashboard's nutrient
-// detail: how it moved day by day, which foods it came from, and how this week compares with last. A week control
+// detail: how it moved day by day, which foods it came from, and how the picked week compares with the one before. A week control
 // goes back to earlier weeks without moving the Dashboard.
 
 export type ChartTab = "trend" | "sources" | "compare";
