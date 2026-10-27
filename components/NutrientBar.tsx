@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { formatValue, statusFor } from "@/lib/log";
 import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
@@ -24,12 +25,15 @@ export function NutrientBar({
   target,
   value,
   detail,
+  heading,
 }: {
   nutrient: NutrientKey;
   target: Target;
   value: number | undefined;
   /** A second line, e.g. "In range on 4 of 5 days". */
   detail?: string;
+  /** Replaces the nutrient's name above the bar, e.g. when the name is already on the row above. */
+  heading?: ReactNode;
 }) {
   const { label, unit } = NUTRIENTS[nutrient];
   const status = statusFor(nutrient, target, value);
@@ -41,7 +45,7 @@ export function NutrientBar({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="font-bold">{label}</span>
+        {heading ?? <span className="font-bold">{label}</span>}
         <StatusChip status={status.kind}>{status.text}</StatusChip>
       </div>
       <div aria-hidden="true" className="relative h-4 overflow-hidden rounded-full bg-track">
