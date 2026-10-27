@@ -79,9 +79,6 @@ function gap(target: Target, value: number): number {
       return value < target.min! ? target.min! - value : target.upper !== undefined && value > target.upper ? value - target.upper : 0;
     case "max":
       return Math.max(0, value - target.max!);
-    case "usual":
-      // With no usual yet, less is better.
-      return target.max !== undefined ? Math.max(0, value - target.max) : value;
   }
 }
 

@@ -1,5 +1,4 @@
-// Adds the newer nutrients (vitamin D, magnesium, sodium and
-// cholesterol) to the built-in foods in lib/foods-data.ts, from USDA
+// Adds the newer nutrients (vitamin D, magnesium and sodium) to the built-in foods in lib/foods-data.ts, from USDA
 // FoodData Central. Each food is looked up by its fdcId; USDA gives values per
 // 100 g, which are scaled to the food's serving (its `grams`).
 //
@@ -10,7 +9,7 @@
 //
 // Without USDA_API_KEY it uses USDA's DEMO_KEY, which allows only a few
 // requests an hour. A nutrient USDA doesn't list for a food is left out
-// (unknown, not zero). Safe to run again: it only fills in these four.
+// (unknown, not zero). Safe to run again: it only fills in these three.
 import fs from "node:fs";
 
 const FILE = "lib/foods-data.ts";
@@ -20,9 +19,8 @@ const NEW = {
   1114: ["vitaminD", 1],
   1090: ["magnesium", 0],
   1093: ["sodium", 0],
-  1253: ["cholesterol", 0],
 };
-const ORDER = ["vitaminD", "magnesium", "sodium", "cholesterol"];
+const ORDER = ["vitaminD", "magnesium", "sodium"];
 
 const raw = fs.readFileSync(FILE, "utf8");
 const crlf = raw.includes("\r\n");

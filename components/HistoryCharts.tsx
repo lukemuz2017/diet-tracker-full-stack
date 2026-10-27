@@ -17,10 +17,6 @@ const STATE_WORDS = { complete: "", open: " · not marked complete, not counted"
 
 /** Where the shaded "good" band sits for a target, and which edges get a label. */
 export function bandFor(target: Target, values: number[]) {
-  // A "usual" target (cholesterol) with no history yet has no band: just the values.
-  if (target.kind === "usual" && target.max === undefined) {
-    return { top: Math.max(1, ...values) * 1.12, from: 0, to: 0, edges: [] as number[] };
-  }
   const reference = target.max ?? target.upper ?? target.min! * 1.5;
   const top = Math.max(reference, ...values) * 1.12;
   if (target.kind === "range") return { top, from: target.min!, to: target.max!, edges: [target.min!, target.max!] };

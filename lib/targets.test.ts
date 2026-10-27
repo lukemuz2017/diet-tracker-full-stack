@@ -157,10 +157,3 @@ test("sodium is a limit: under 2,300 mg", () => {
   assert.deepEqual(computeTargets(man, TODAY).sodium, { kind: "max", max: 2300 });
   assert.equal(formatTarget("sodium", computeTargets(man, TODAY).sodium), "under 2,300 mg");
 });
-
-test("cholesterol has no fixed limit: it waits for the person's own history", () => {
-  const target = computeTargets(man, TODAY).cholesterol;
-  assert.deepEqual(target, { kind: "usual" });
-  assert.match(formatTarget("cholesterol", target), /once you've logged enough days/);
-  assert.equal(formatTarget("cholesterol", { kind: "usual", usual: 280, max: 336 }), "under 336 mg (20% above your usual 280 mg)");
-});

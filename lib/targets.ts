@@ -5,10 +5,7 @@
 import { NUTRIENTS, type NutrientKey } from "./nutrients.ts";
 import { ACTIVITY_OPTIONS, dietOf, profileAge, type Activity, type LifeStage, type Profile } from "./profile.ts";
 
-// "usual" is cholesterol's: no official limit, so a person's average is
-// compared with their own usual (lib/usual.ts). Until there's enough history,
-// it has no numbers and its status is unknown.
-export type TargetKind = "range" | "min" | "max" | "usual";
+export type TargetKind = "range" | "min" | "max";
 
 export interface Target {
   kind: TargetKind;
@@ -18,16 +15,7 @@ export interface Target {
   max?: number;
   /** Tolerable Upper Intake Level, for "min" targets that have one. */
   upper?: number;
-  /** "usual" targets: the person's usual daily amount; `max` is a set share above it. */
-  usual?: number;
 }
-
-/** A "usual" target flags an average more than this share above the person's usual. */
-export const USUAL_MARGIN = 0.2;
-/** How many days before the window the person's usual is worked out from, at most. */
-export const USUAL_LOOKBACK_DAYS = 21;
-/** Complete days with a value needed before there's a usual to compare with. */
-export const USUAL_MIN_DAYS = 7;
 
 export type Targets = Record<NutrientKey, Target>;
 
@@ -267,8 +255,6 @@ export function computeTargets(profile: Profile, today: string): Targets {
     vitaminD: micronutrient("vitaminD", profile, age),
     magnesium: micronutrient("magnesium", profile, age),
     sodium: { kind: "max", max: SODIUM_LIMIT_MG },
-    // Filled in from the person's history by withUsual (lib/usual.ts).
-    cholesterol: { kind: "usual" },
   };
 }
 
@@ -281,10 +267,6 @@ export function formatTarget(key: NutrientKey, target: Target): string {
   const unit = NUTRIENTS[key].unit;
   if (target.kind === "range") return `${formatAmount(target.min!)}–${formatAmount(target.max!)} ${unit}`;
   if (target.kind === "min") return `at least ${formatAmount(target.min!)} ${unit}`;
-  if (target.kind === "usual") {
-    if (target.usual === undefined) return "your own usual, once you've logged enough days";
-    return `under ${formatAmount(Math.round(target.max!))} ${unit} (${USUAL_MARGIN * 100}% above your usual ${formatAmount(Math.round(target.usual))} ${unit})`;
-  }
   return `under ${formatAmount(target.max!)} ${unit}`;
 }
 
@@ -342,8 +324,6 @@ export function explainTarget(key: NutrientKey, profile: Profile, targets: Targe
       return `${age <= 18 ? "25" : "20"}–35% of your ${kcalText}, at 9 kcal per gram.`;
     case "sodium":
       return `Under ${formatAmount(SODIUM_LIMIT_MG)} mg a day, the limit in the Dietary Guidelines for Americans. Most sodium comes from packaged, canned and restaurant food, not the salt shaker. If your doctor gave you a lower limit, follow that.`;
-    case "cholesterol":
-      return `Current guidelines no longer set a daily limit (the old 300 mg cap was dropped in 2015), so this compares you with yourself: your average is flagged when it runs more than ${USUAL_MARGIN * 100}% above your usual, which is your average over up to the 3 weeks before. It needs at least ${USUAL_MIN_DAYS} complete days of history first.`;
     case "fiber":
       return `14 g for every 1,000 kcal you eat (the National Academies’ Adequate Intake), so ${target.min} g at ${kcalText}.`;
     default: {

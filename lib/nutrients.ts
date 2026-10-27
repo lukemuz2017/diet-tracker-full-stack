@@ -13,8 +13,7 @@ export type NutrientKey =
   | "vitaminC"
   | "vitaminD"
   | "magnesium"
-  | "sodium"
-  | "cholesterol";
+  | "sodium";
 
 export type NutrientUnit = "kcal" | "g" | "mg" | "mcg";
 
@@ -35,7 +34,6 @@ export const NUTRIENTS: Record<NutrientKey, { label: string; unit: NutrientUnit 
   vitaminD: { label: "Vitamin D", unit: "mcg" },
   magnesium: { label: "Magnesium", unit: "mg" },
   sodium: { label: "Sodium", unit: "mg" },
-  cholesterol: { label: "Cholesterol", unit: "mg" },
 };
 
 /**
@@ -57,14 +55,12 @@ export const WHY: Record<NutrientKey, string> = {
   vitaminC: "Vitamin C helps wounds heal, supports your immune system and helps you absorb iron from plant foods.",
   vitaminD: "Vitamin D helps your body absorb calcium for strong bones. Sunlight makes it too, so food is only part of the picture.",
   sodium: "Sodium, mostly from salt, helps balance fluids in your body, but a lot of it over time raises blood pressure.",
-  cholesterol: "Cholesterol is a fat your body makes and also gets from animal foods. For most people the saturated fat that comes with it matters more than the cholesterol itself, so this one is compared with your own usual.",
 };
 
 /** How the Profile page groups nutrients. */
 export const NUTRIENT_GROUPS: { title: string; keys: NutrientKey[] }[] = [
   { title: "Energy and macros", keys: ["calories", "protein", "carbs", "fat"] },
   { title: "Get enough of", keys: ["fiber", "potassium", "calcium", "iron", "magnesium", "vitaminA", "vitaminC", "vitaminD"] },
-  // Less is better: sodium has an official limit; cholesterol has none, so it's
-  // compared with the person's own usual (lib/usual.ts).
-  { title: "Keep under", keys: ["sodium", "cholesterol"] },
+  // Less is better: sodium has an official limit.
+  { title: "Keep under", keys: ["sodium"] },
 ];

@@ -4,7 +4,6 @@ import { PlusIcon } from "@/components/ui/icons";
 import { dietOf, type Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { SUGGESTION_DAYS, summarize } from "@/lib/suggestions";
-import { withUsual } from "@/lib/usual";
 import { computeTargets } from "@/lib/targets";
 import { summarizeWindow } from "@/lib/week";
 
@@ -34,7 +33,7 @@ export function WeekSummary({
   addLabel: string;
   onAdd: () => void;
 }) {
-  const targets = withUsual(computeTargets(profile, today), data, end);
+  const targets = computeTargets(profile, today);
   const window = summarizeWindow(data, end, targets);
   const { verdict, tiles, daysToGo } = summarize(window, targets, data.entries, dietOf(profile));
 

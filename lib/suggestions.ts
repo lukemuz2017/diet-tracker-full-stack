@@ -103,9 +103,9 @@ function fill(tip: TipText | string, diet: Pick<Diet, "allergies" | "pattern">):
 }
 
 /** Which on-track nutrient to praise first: the harder wins lead. */
-const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein", "carbs", "fat", "calories", "sodium", "cholesterol"];
+const GOOD_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein", "carbs", "fat", "calories", "sodium"];
 /** Staying under a limit or near maintenance is good, but no single food earns the credit. */
-const NO_SOURCE: NutrientKey[] = ["calories", "sodium", "cholesterol"];
+const NO_SOURCE: NutrientKey[] = ["calories", "sodium"];
 
 export type TileKind = "good" | "improve" | "big";
 

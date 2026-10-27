@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/Card";
 import { GOOD_DAY_SHARE } from "@/lib/activity";
 import { formatDay } from "@/lib/dates";
 import { SCORED_KEYS, statusFor } from "@/lib/log";
-import { withUsual } from "@/lib/usual";
 import { NUTRIENT_GROUPS } from "@/lib/nutrients";
 import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
@@ -79,7 +78,7 @@ export function WindowView({
   today: string;
   detail?: "bars" | "charts";
 }) {
-  const targets = withUsual(computeTargets(profile, today), data, end);
+  const targets = computeTargets(profile, today);
   const summary = summarizeWindow(data, end, targets);
   // Per day: the share of nutrients with a value that were in range.
   const dayShare = summary.days.map((day) => {

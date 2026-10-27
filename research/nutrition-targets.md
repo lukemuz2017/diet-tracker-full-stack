@@ -19,7 +19,6 @@ All targets are judged on the rolling 7-day average. W = body weight in kg; kcal
 | Vitamin D | RDA: 15 mcg (600 IU) from 14 to 70, 20 mcg (800 IU) from 71, the same for men and women, and 15 mcg in pregnancy and breastfeeding. UL 100 mcg (4,000 IU). Sunlight and supplements also supply it, so food alone can read low. | [S30] |
 | Magnesium | RDA: men 410 mg at 14–18, 400 mg at 19–30, 420 mg at 31+; women 360 / 310 / 320 mg. Pregnancy 400 / 350 / 360 mg; breastfeeding 360 / 310 / 320 mg (14–18 / 19–30 / 31+). The 350 mg UL applies to supplements only, so it isn't flagged. | [S31] |
 | Sodium | Under 2,300 mg a day (Dietary Guidelines; the National Academies' Chronic Disease Risk Reduction level) for everyone 14 and over. A limit, not a target to reach. | [S1], [S9] |
-| Cholesterol | No official daily limit: the 300 mg cap was dropped in the 2015 guidelines and not restored. The app compares the 7-day average with the person's own usual (their average over the 3 weeks before the window, from at least 7 complete days) and flags it when it runs more than 20% above. The 20% margin and the 3-week, 7-day rules are the app's own choices, not from a source. | [S1] |
 
 **Non-binary.** A 2022 Academy of Nutrition and Dietetics paper suggests expressing needs as a range between the female and male values, especially for energy [S24], [S25]. The app centers calories on the midpoint of the two equations, with a range spanning both. For minimums it uses the higher of the two values, so needs are covered.
 
@@ -46,6 +45,7 @@ The ⓘ text for calories says a doctor or midwife may suggest a different amoun
 **Considered but not used**
 - Mifflin-St Jeor × activity factors: Mifflin-St Jeor is still recommended for *resting* energy [S5], [S6], but the common 1.2–1.725 multipliers couldn't be traced to an authority.
 - Sodium (under 2,300 mg, the National Academies and DGA limit [S1], [S9]): dropped at the student's request on 2026-10-20 and brought back on 2026-10-25 with cholesterol, vitamin D and magnesium. The AHA's 1,500 mg ideal and WHO's 2,000 mg [S17], [S18] were set aside.
+- Cholesterol: dropped at the student's request on 2026-10-27 (it was confusing). It had no official limit, so the app compared it with the person's own usual; that comparison is gone too.
 - Saturated fat (under 10% of calories, [S1]), and mono- and polyunsaturated fat: saturated fat was added and then dropped as its own category at the student's request on 2026-10-25. USDA lists all three, but only saturated fat has an official limit.
 - Added sugars: USDA doesn't list it for generic foods (0% of 564 sampled), so it can't be tracked from this data.
 - Smokers' +35 mg vitamin C (would need another setup question) and vegetarians' 1.8× iron (the eating pattern is now asked, but this isn't applied yet).

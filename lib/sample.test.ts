@@ -52,9 +52,9 @@ test("portions scale toward the person's calories and stay realistic", () => {
   }
 });
 
-test("sample meals carry the newer nutrients: vitamin D, magnesium, sodium and cholesterol", () => {
+test("sample meals carry the newer nutrients: vitamin D, magnesium and sodium", () => {
   const entries = sampleEntries(EMPTY, TODAY);
-  for (const key of ["vitaminD", "magnesium", "sodium", "cholesterol"] as const) {
+  for (const key of ["vitaminD", "magnesium", "sodium"] as const) {
     assert.ok(entries.some((entry) => (entry.nutrients[key] ?? 0) > 0), `${key} appears in the sample meals`);
   }
 });

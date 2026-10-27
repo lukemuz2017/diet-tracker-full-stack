@@ -10,7 +10,7 @@ export const MAX_WINS = 3;
 /** Fiber, vitamins and minerals are the harder wins, so they're named first. */
 const WIN_ORDER: NutrientKey[] = ["fiber", "vitaminC", "potassium", "magnesium", "calcium", "iron", "vitaminA", "vitaminD", "protein"];
 /** What's worth a heads-up when it's over, most common first. */
-const HEADS_UP_ORDER: NutrientKey[] = ["calories", "sodium", "fat", "carbs", "protein", "calcium", "iron", "vitaminC", "vitaminD", "cholesterol"];
+const HEADS_UP_ORDER: NutrientKey[] = ["calories", "sodium", "fat", "carbs", "protein", "calcium", "iron", "vitaminC", "vitaminD"];
 
 export interface Highlights {
   wins: string[];

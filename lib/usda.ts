@@ -37,7 +37,6 @@ const NUTRIENT_IDS: Record<number, NutrientKey> = {
   1114: "vitaminD",
   1090: "magnesium",
   1093: "sodium",
-  1253: "cholesterol",
 };
 
 // Foundation foods often give energy only by the Atwater factors.

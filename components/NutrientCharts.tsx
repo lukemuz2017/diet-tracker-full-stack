@@ -13,7 +13,6 @@ import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
 import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { computeTargets, formatTarget, type Targets } from "@/lib/targets";
-import { withUsual } from "@/lib/usual";
 import { WINDOW_DAYS, rollingWindow, summarizeWindow, type WindowSummary } from "@/lib/week";
 
 // The charts for one nutrient, in a pop-up opened from the Dashboard's nutrient
@@ -72,10 +71,9 @@ function ChartsBody({
   const [end, setEnd] = useState(initialEnd);
   const [picking, setPicking] = useState(false);
 
-  const targets = withUsual(computeTargets(profile, today), data, end);
+  const targets = computeTargets(profile, today);
   const summary = summarizeWindow(data, end, targets);
-  const base = computeTargets(profile, today);
-  const rolling = rollingWindow(data, end, (date) => withUsual(base, data, date)).map((day) => ({
+  const rolling = rollingWindow(data, end, () => targets).map((day) => ({
     average: day.averages[nutrient],
     status: statusFor(nutrient, day.targets[nutrient], day.counted > 0 ? day.averages[nutrient] : undefined).kind,
   }));

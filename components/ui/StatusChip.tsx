@@ -11,7 +11,7 @@ const styles: Record<Status, string> = {
 };
 
 /**
- * In range, Enough, Under limit and Within your usual all read the same way:
+ * In range, Enough and Under limit all read the same way:
  * a round leaf badge whose check draws itself (globals.css, "check-badge";
  * still for reduced motion). The words stay for screen readers. Under, over
  * and unknown keep their words, since they need them.

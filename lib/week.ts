@@ -94,7 +94,7 @@ export interface RollingDay {
   averages: Nutrients;
   /** Complete days it rests on. */
   counted: number;
-  /** The targets as of that day (the "usual" baseline moves with it). */
+  /** The targets as of that day. */
   targets: Targets;
 }
 

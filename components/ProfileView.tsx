@@ -19,7 +19,6 @@ import { isSample, SAMPLE_DAYS, withSample, withoutSample } from "@/lib/sample";
 import { updateData, useSavedData, type SavedData } from "@/lib/storage";
 import { showToast } from "@/lib/toast";
 import { useToday } from "@/lib/useToday";
-import { withUsual } from "@/lib/usual";
 import { valuesFromProfile, validateSetup } from "@/lib/setup";
 import { computeTargets, explainTarget, formatTarget, maintenanceCalories } from "@/lib/targets";
 
@@ -31,7 +30,7 @@ export function ProfileView() {
   if (!data?.profile || !today) return <PageHeader title="Profile" />;
 
   const { profile } = data;
-  const targets = withUsual(computeTargets(profile, today), data, today);
+  const targets = computeTargets(profile, today);
   const firstVisit = data.entries.length === 0;
 
   return (

@@ -7,8 +7,8 @@ import type { Target } from "./targets.ts";
 
 export const NUTRIENT_KEYS = Object.keys(NUTRIENTS) as NutrientKey[];
 
-/** Nutrients with a fixed target; they make up a day's ring. Cholesterol has none (lib/usual.ts). */
-export const SCORED_KEYS = NUTRIENT_KEYS.filter((key) => key !== "cholesterol");
+/** Nutrients that make up a day's ring. */
+export const SCORED_KEYS = NUTRIENT_KEYS;
 
 // FDA Daily Values used on food labels (21 CFR 101.9). A serving with 10% or
 // more of the DV is a "good source" (21 CFR 101.54), which is what the
@@ -100,13 +100,6 @@ export function statusFor(key: NutrientKey, target: Target, value: number | unde
   if (value === undefined) return { kind: "unknown", text: "Not enough data" };
   // Judge the number people see, so a shown "31 g" against "at least 31 g" is in range.
   value = roundForDisplay(value);
-  if (target.kind === "usual") {
-    // Cholesterol: against the person's own usual, once there's enough history.
-    if (target.max === undefined) return { kind: "unknown", text: "Building your usual" };
-    return value > Math.round(target.max)
-      ? { kind: "over", text: `Above your usual by ${formatValue(value - target.usual!)} ${unit}` }
-      : { kind: "in-range", text: "Within your usual" };
-  }
   if ((target.kind === "range" || target.kind === "min") && value < target.min!) {
     return { kind: "to-go", text: `${formatValue(target.min! - value)} ${unit} to go` };
   }

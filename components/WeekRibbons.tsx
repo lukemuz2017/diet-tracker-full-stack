@@ -9,7 +9,6 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { DayBadge } from "@/components/WindowView";
 import { addDays, formatDay, formatShortDay } from "@/lib/dates";
 import { SCORED_KEYS, formatValue, statusFor } from "@/lib/log";
-import { withUsual } from "@/lib/usual";
 import { NUTRIENT_GROUPS, NUTRIENTS, WHY, type NutrientKey } from "@/lib/nutrients";
 import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
@@ -42,7 +41,7 @@ const SECTION_TITLE: Record<string, string> = { "Energy and macros": "Keep in ra
 /** What the badge says to a screen reader (sighted people see the check). */
 function summaryLabel(kind: string, targetKind: string): string {
   if (kind !== "in-range") return SUMMARY[kind];
-  return targetKind === "min" ? "Enough" : targetKind === "max" ? "Under the limit" : targetKind === "usual" ? "Within your usual" : "In range";
+  return targetKind === "min" ? "Enough" : targetKind === "max" ? "Under the limit" : "In range";
 }
 
 /**
@@ -86,14 +85,13 @@ export function WeekRibbons({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
-  const targets = withUsual(computeTargets(profile, today), data, end);
+  const targets = computeTargets(profile, today);
   const summary = summarizeWindow(data, end, targets);
   const dayLabel = (date: string) => (date === today ? "Today" : formatDay(date).slice(0, 3));
   const dayName = (date: string) => (date === today ? "Today" : date === addDays(today, -1) ? "Yesterday" : formatDay(date));
 
   // Each day's 7-day average up to that day: its cell colors and its ring.
-  const base = computeTargets(profile, today);
-  const rolling = rollingWindow(data, end, (date) => withUsual(base, data, date));
+  const rolling = rollingWindow(data, end, () => targets);
   const dayShare = summary.days.map((day, index) => {
     if (day.foods === 0) return null;
     const { averages, targets: dayTargets } = rolling[index];

@@ -12,7 +12,6 @@ import { formatTarget, type Target } from "@/lib/targets";
 const FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carrot", unknown: "bg-track" } as const;
 
 function scaleMax(target: Target): number {
-  if (target.kind === "usual") return (target.max ?? 1) * 1.3;
   if (target.kind === "range") return target.max! * 1.25;
   if (target.kind === "min") return target.min! * 1.6;
   return target.max! * 1.3;
@@ -43,7 +42,7 @@ export function NutrientBar({
   const max = scaleMax(target);
   // With checkOnly, a met target shows no badge (the check is on the row above); words like "499 kcal to go" stay.
   const showChip = !(checkOnly && status.kind === "in-range");
-  const upperOnly = target.kind === "max" || target.kind === "usual";
+  const upperOnly = target.kind === "max";
   const bandStart = upperOnly ? 0 : target.min!;
   const bandEnd = target.kind === "min" ? max : (target.max ?? 0);
 
