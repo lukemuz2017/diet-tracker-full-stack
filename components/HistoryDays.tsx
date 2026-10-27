@@ -16,6 +16,9 @@ import type { WindowSummary } from "@/lib/week";
 
 export function HistoryDays({ entries, summary }: { entries: Entry[]; summary: WindowSummary }) {
   const [open, setOpen] = useState<string[]>([]);
+  // Meals start collapsed inside an open day.
+  const [openMeals, setOpenMeals] = useState<string[]>([]);
+  const toggleMeal = (key: string) => setOpenMeals((keys) => (keys.includes(key) ? keys.filter((item) => item !== key) : [...keys, key]));
   const baseId = useId();
   const toggle = (date: string) => setOpen((dates) => (dates.includes(date) ? dates.filter((item) => item !== date) : [...dates, date]));
 
@@ -59,30 +62,49 @@ export function HistoryDays({ entries, summary }: { entries: Entry[]; summary: W
                 <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${chip.className}`}>{chip.text}</span>
               </div>
               {expanded && (
-                <div id={panelId} className="flex flex-col gap-3 pb-3 pl-5 pt-1">
+                <div id={panelId} className="flex flex-col pb-2 pl-5">
                   {byMeal(entries.filter((entry) => entry.date === day.date))
                     .filter((group) => group.entries.length > 0)
-                    .map((group) => (
-                      <section key={group.meal} aria-label={group.label}>
-                        <h4 className="flex flex-wrap items-baseline gap-x-3 text-xs font-bold uppercase tracking-[0.08em] text-leaf">
-                          {group.label}
-                          <span className="text-[13px] font-normal normal-case tracking-normal text-muted">
-                            {formatValue(group.entries.reduce((sum, entry) => sum + (entry.nutrients.calories ?? 0), 0))} kcal
-                          </span>
-                        </h4>
-                        <ul className="divide-y divide-line">
-                          {group.entries.map((entry) => (
-                            <li key={entry.id} className="py-2">
-                              <b className="block leading-snug">{entry.name}</b>
-                              <span className="block text-sm text-muted">
-                                {formatAmount(amountFor(entry.foodId), quantityFor(amountFor(entry.foodId), entry.servings))}
-                                {entry.nutrients.calories !== undefined && ` · ${formatValue(entry.nutrients.calories)} kcal`}
+                    .map((group) => {
+                      const mealKey = `${day.date}-${group.meal}`;
+                      const mealOpen = openMeals.includes(mealKey);
+                      const listId = `${baseId}-${mealKey}`;
+                      const kcal = group.entries.reduce((sum, entry) => sum + (entry.nutrients.calories ?? 0), 0);
+                      return (
+                        <section key={group.meal} aria-label={group.label} className="border-t border-line first:border-t-0">
+                          <h4>
+                            <button
+                              type="button"
+                              aria-expanded={mealOpen}
+                              aria-controls={listId}
+                              onClick={() => toggleMeal(mealKey)}
+                              className="flex min-h-11 w-full items-center gap-2 rounded-lg text-left hover:bg-track/60"
+                            >
+                              <span aria-hidden="true" className={`text-xs text-muted transition-transform ${mealOpen ? "rotate-90" : ""}`}>
+                                ▸
                               </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    ))}
+                              <span className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">{group.label}</span>
+                              <span className="text-[13px] text-muted">
+                                {group.entries.length} {group.entries.length === 1 ? "food" : "foods"} · {formatValue(kcal)} kcal
+                              </span>
+                            </button>
+                          </h4>
+                          {mealOpen && (
+                            <ul id={listId} className="divide-y divide-line pl-5">
+                              {group.entries.map((entry) => (
+                                <li key={entry.id} className="py-2">
+                                  <b className="block leading-snug">{entry.name}</b>
+                                  <span className="block text-sm text-muted">
+                                    {formatAmount(amountFor(entry.foodId), quantityFor(amountFor(entry.foodId), entry.servings))}
+                                    {entry.nutrients.calories !== undefined && ` · ${formatValue(entry.nutrients.calories)} kcal`}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </section>
+                      );
+                    })}
                 </div>
               )}
             </li>
