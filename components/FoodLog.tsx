@@ -338,8 +338,8 @@ function DayCard({
                       {NUTRIENTS[key].label}
                     </th>
                     <td className="py-1.5 text-right tabular-nums">
-                      {totals[key] === undefined ? "–" : `${formatValue(totals[key]!)} ${NUTRIENTS[key].unit}`}
-                      {totals[key] !== undefined && known[key] < foods && (
+                      {formatValue(totals[key] ?? 0)} {NUTRIENTS[key].unit}
+                      {known[key] < foods && (
                         <span className="block text-xs text-muted">from {known[key]} of {foods} foods</span>
                       )}
                     </td>

@@ -61,6 +61,8 @@ export function summarizeWindow(
   const dates = windowDates(end);
   const days: WindowDay[] = dates.map((date) => {
     const { totals, foods } = totalsFor(data.entries.filter((entry) => entry.date === date));
+    // On a day with food, a nutrient no food listed counts as 0, not as unknown.
+    if (foods > 0) for (const key of NUTRIENT_KEYS) totals[key] ??= 0;
     const state = dayState(foods, data.completeDays.includes(date));
     return { date, state, totals, foods };
   });

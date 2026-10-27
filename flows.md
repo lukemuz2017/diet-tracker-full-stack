@@ -91,7 +91,7 @@ Shared navigation, shown once setup is done: **Dashboard · History · Profile �
 
 ## What's tracked
 
-The log form always shows food name, date, calories, protein, carbs and fat. The other six nutrients are optional, under "More nutrients"; a blank means *unknown*, not zero, and averages say how many foods they're based on. Quick-add foods fill in all ten, and carry "what it adds" tags (e.g. protein, fiber, vitamin C) instead of good/bad colors. On bars, going over a minimum is never shown in red.
+The log form always shows food name, date, calories, protein, carbs and fat. The other six nutrients are optional, under "More nutrients"; a blank is unknown on the food itself, but in the weekly views a nutrient no food listed counts as 0 on a day with food (a day with nothing logged stays a gap), and the day panel says "from N of M foods" when only some listed it. Quick-add foods fill in all ten, and carry "what it adds" tags (e.g. protein, fiber, vitamin C) instead of good/bad colors. On bars, going over a minimum is never shown in red.
 
 Every nutrient is judged on its 7-day average; the same target is shown as a daily guide on Today.
 

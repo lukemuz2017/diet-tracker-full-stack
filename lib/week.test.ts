@@ -16,6 +16,9 @@ const targets = {
   iron: { kind: "min", min: 8 },
   vitaminA: { kind: "min", min: 900 },
   vitaminC: { kind: "min", min: 90 },
+  vitaminD: { kind: "min", min: 15 },
+  magnesium: { kind: "min", min: 400 },
+  sodium: { kind: "max", max: 2300 },
 } as Targets;
 
 let id = 0;
@@ -59,16 +62,21 @@ test("marking today complete counts it", () => {
   assert.equal(after.counted, 1);
 });
 
-test("coverage counts days with a value and days in range", () => {
+test("on a day with food, a nutrient no food listed counts as 0", () => {
   const entries = [
     food("2026-10-12", 2000, { fiber: 30 }),
     food("2026-10-13", 2000, { fiber: 10 }),
     food("2026-10-14", 2000),
   ];
   const s = summarizeWindow({ entries, completeDays: ["2026-10-12", "2026-10-13", "2026-10-14"] }, TODAY, targets);
-  assert.deepEqual(s.coverage.fiber, { days: 2, inRange: 1 });
-  assert.equal(s.averages.fiber, 20);
+  // The third day lists no fiber, so it counts as 0 rather than being left out.
+  assert.deepEqual(s.coverage.fiber, { days: 3, inRange: 1 });
+  assert.equal(Math.round(s.averages.fiber! * 10) / 10, 13.3);
   assert.deepEqual(s.coverage.calories, { days: 3, inRange: 3 });
+  // A day with nothing logged is still a gap, not a zero.
+  const gap = summarizeWindow({ entries: [], completeDays: [] }, TODAY, targets);
+  assert.equal(gap.averages.fiber, undefined);
+  assert.equal(gap.days.at(-1)!.totals.fiber, undefined);
 });
 
 test("a past window works the same as the current one", () => {
