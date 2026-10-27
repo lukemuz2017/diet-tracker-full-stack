@@ -18,14 +18,19 @@ A diet tracking and planning tool for keeping a **balanced diet**. It is not a w
 
 1. **Set up once.** The person enters a few facts about themselves (height, weight, age, sex, activity level). The app estimates maintenance calories and sets target ranges for each tracked nutrient.
 2. **Log food.** They log what they eat each day (or catch up on earlier days of the week) and mark the day complete.
-3. **Check the last 7 days.** Every nutrient is judged on its average over the complete days in the last 7. The Dashboard shows what's going well, what could improve (with a food-group suggestion) and a bigger-picture habit.
+3. **Check the last 7 days.** Every nutrient is judged on its average over the complete days in the last 7. The Dashboard shows what's going well, what could improve (with a food-group suggestion) and a bigger-picture habit; its grid colors each day by the 7-day average up to that day, and an Additional Stats pop-up per nutrient shows a trend, the foods behind it and a week-over-week comparison.
+
+Signed in with Clerk; saved in Supabase with row-level security; food search from USDA FoodData Central. The architecture, request trace and test write-up are in `README.md`.
 
 Name: Keep Level (renamed from Diet Tracker, 2026-10-27). Repo folder: `health-tracker`.
 
 ## Project files
 
 - `flows.md`: the three user flows (Mermaid diagram), routes, states and errors, and the table of nutrient targets. It's the source of truth for what the app does.
-- `README.md`: shows the same diagram (keep the two copies in sync), plus the onboarding research and first-run check write-ups.
+- `README.md`: the Assignment 4 write-up (architecture, request trace, data model and row-level security, the API, keys, tests and the fail-then-pass story, security review, deploy), the same flow diagram (keep the two copies in sync), plus the onboarding research and first-run check write-ups.
+- `supabase/migrations/`: every schema change, as files, including the row-level security policies and the break/restore pair used for the Playwright exercise.
+- `e2e/`: the Playwright two-user test. `docs/`: the Assignment 3 write-up and the screenshots of the failing test.
+- `.claude/settings.json` (denies the agent reading `.env*`) and `.mcp.json` (connects the agent to the one Supabase project): both are committed on purpose.
 - `design.md`: the visual design (Market Stand): color tokens with checked contrast, type, spacing, component rules, imagery and voice. Follow it for every screen; `mood-board.pdf` shows it.
 - `user-flows.pdf`: the diagram as a PDF, made with Mermaid CLI (`@mermaid-js/mermaid-cli`, run through `npx`, not a project dependency). Regenerate it whenever the diagram changes.
 - `research/onboarding-research.md`: notes and sources from the onboarding research.
@@ -62,21 +67,22 @@ Name: Keep Level (renamed from Diet Tracker, 2026-10-27). Repo folder: `health-t
 Targets are estimates for maintaining weight, not medical advice. Say so once in the UI, plainly. The full target table is in `flows.md`.
 
 - **All targets** follow `research/nutrition-targets.md` (sources cited there); don't change a rule without updating that file. Calories use the National Academies 2023 energy equations by sex and activity level (±10%); protein is per kg of body weight; calcium, iron and vitamin C have upper limits.
-- **Rolling 7-day window:** every nutrient is judged on its average over today and the 6 days before; daily ranges are only a guide. The full rules (only days the person marks complete count, first-week stages, the 14-day weekend trend) are in `flows.md` under "How the 7-day window works". Keep this logic in pure functions in `lib/`.
+- **Rolling 7-day window:** every nutrient is judged on its average over today and the 6 days before; daily ranges are only a guide. The full rules (only days the person marks complete count, first-week stages) are in `flows.md` under "How the 7-day window works". The Dashboard colors each day by the rolling 7-day average up to it (`rollingWindow` in `lib/week.ts`). Keep this logic in pure functions in `lib/`.
+- **Nutrients (13):** calories, protein, carbs, fat (keep in range); fiber, potassium, calcium, iron, magnesium, vitamins A, C and D (get enough of); sodium (keep under). Cholesterol, added sugar and saturated fat were tried and dropped.
 - **Unknown values:** only food name, date, calories, protein, carbs and fat are required. A blank optional nutrient is unknown on the food itself, but in the weekly views (grid, averages, charts) a nutrient no food listed counts as 0 on a day with food (2026-10-27); a day with nothing logged is still a gap. The day panel's totals say "from N of M foods" when only some foods listed it.
-- **Common foods:** a static, bundled list (about 40 foods) with all 10 nutrients per standard serving. Values come from USDA FoodData Central, cited in the data file.
+- **Common foods:** a static, bundled list (41 foods) with all 13 nutrients per standard serving (dark chocolate lists no vitamin D). Values come from USDA FoodData Central, cited in the data file.
 
 ## Data model (Supabase)
 
 Four tables. Every row belongs to one person: `user_id` is the Clerk user id (text, e.g. `user_2abc…`), filled in by the database from the signed-in token (`default auth.jwt()->>'sub'`), so the browser never sends it. Row-level security is on for every table, with one rule: a person can select, insert, update and delete a row only when `user_id = auth.jwt()->>'sub'`. Tables are created as migrations.
 
-- **`profiles`**: one row per person, the setup details. `user_id` (primary key), `units`, `height_cm`, `weight_kg`, `birth_date`, `sex`, `activity`, `allergies text[]`, `pattern`, `life_stage`, `updated_at`. Mirrors `Profile` in `lib/profile.ts`.
+- **`profiles`**: one row per person, the setup details. `user_id` (primary key), `units`, `height_cm`, `weight_kg`, `birth_date`, `sex`, `activity`, `allergies text[]`, `pattern` (everything, vegetarian, pescatarian, vegan, keto or paleo), `life_stage`, `updated_at`. Mirrors `Profile` in `lib/profile.ts`.
 - **`my_foods`**: foods the person saved, from USDA search or recipes they built. `id` (uuid primary key), `user_id`, `kind` (`'usda'` or `'recipe'`), `name`, `fdc_id` (USDA only), `nutrients jsonb` (per 100 g for USDA, per serving for a recipe), `servings` (recipes), `ingredients jsonb` (recipes), `created_at`. Unique `(user_id, fdc_id)`, so a USDA food is saved once.
 - **`log_entries`**: one row per food eaten. `id` (uuid primary key), `user_id`, `date` (local date eaten), `meal`, `name`, `amount`, `source` (`'builtin:<id>'`, `'usda:<fdcId>'` or `'recipe:<id>'`), `nutrients jsonb` (totals, copied at logging time), `is_sample` (from "Load a sample 2 weeks"), `created_at`. Mirrors `Entry` in `lib/storage.ts`.
 - **`complete_days`**: one row per day marked complete. `user_id`, `date`; primary key `(user_id, date)`.
 
 Notes:
-- `nutrients` is `jsonb` shaped like `Nutrients` in `lib/nutrients.ts` (the 10 keys); a missing key means unknown, not zero.
+- `nutrients` is `jsonb` shaped like `Nutrients` in `lib/nutrients.ts` (the 13 keys); a missing key means the food didn't list it. The weekly views count that as 0 on a day with food.
 - Entries copy their nutrients, so editing a recipe or removing a saved food never changes past days.
 - The 41 common foods stay bundled in `lib/foods-data.ts`, not in the database.
 - No import from the old localStorage data: signed-in data starts empty.

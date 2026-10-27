@@ -12,17 +12,19 @@ The tool is built around three flows: the **first visit**, the **main task** (lo
 flowchart LR
   subgraph FV["1 · First visit"]
     direction TB
-    A(["Open app, nothing saved"]) --> B["Welcome · /<br/>what it's for · Get started"]
-    B --> C["Your details · /setup<br/>height, weight, date of birth, sex, activity<br/>optional diet notes"]
+    A(["Open app, signed out"]) --> B["Welcome · /<br/>what it's for · Get started · Sign in"]
+    B --> U["Sign up · /sign-up (Clerk)<br/>first and last name, email, password"]
+    U --> C["Your details · /setup<br/>height, weight, date of birth, sex, activity<br/>optional diet notes"]
     C -- "missing or out-of-range value:<br/>error by the field, input kept" --> C
     C --> D["Profile · /profile<br/>your ranges, ⓘ explains each<br/>Log your first food"]
-    D --> E["Add food pop-up · /log<br/>search or browse · pick foods · add"]
+    D --> E["Add food pop-up · /log<br/>search built-in and USDA foods · pick · add"]
   end
 
   subgraph MT["2 · Main task: log food"]
     direction TB
     T["Dashboard · /log<br/>Today row · + Add food"] --> L["Add food pop-up<br/>day · meal · search<br/>picked foods in a To add list"]
     L -- "own food: error by the field, input kept" --> L
+    L -- "USDA slow or down: message,<br/>built-in foods still work" --> L
     L -- "Add 3 foods to lunch · Undo<br/>stays open for the next meal" --> L
     L -- "Mark complete" --> K["Day complete<br/>joins the 7-day average"]
     K --> T
@@ -30,11 +32,13 @@ flowchart LR
 
   subgraph CB["3 · Coming back"]
     direction TB
-    R(["Return visit"]) --> W["Dashboard · /log<br/>Going well · Could improve · Bigger picture"]
-    W --> G["Week grid<br/>a cell per nutrient per day<br/>cell colored by the 7-day average to that day<br/>brown = not marked complete"]
-    G -- "pick a day" --> P["Day panel<br/>meals · fix amounts · Mark complete"]
+    R(["Return visit"]) --> SI["Sign in · /sign-in (Clerk)<br/>a signed-out visit to any page lands here"]
+    SI --> W["Dashboard · /log<br/>Going well · Could improve · Bigger picture"]
+    W --> G["Week grid<br/>a cell per nutrient per day,<br/>colored by the 7-day average to that day<br/>brown = incomplete"]
+    G -- "pick a day" --> P["Day panel<br/>meals or totals · fix amounts · Mark complete"]
     G -- "pick a nutrient" --> N["Nutrient detail<br/>each day and its top source"]
-    W --> H["History · /history<br/>earlier weeks · chart with running average"]
+    N --> X["Additional Stats pop-up<br/>Trend · Sources · Compare weeks<br/>pick a week"]
+    W --> H["History · /history<br/>calendar · each day opens to its meals"]
   end
 
   E -- "'First food logged'" --> MT
@@ -48,7 +52,8 @@ Shared navigation, shown once setup is done: **Dashboard · History · Profile �
 
 | Route | What it's for |
 |---|---|
-| `/` | Welcome card when nothing is saved; goes to the Food log once you're set up |
+| `/` | Welcome card for a signed-out visitor (Get started, Sign in); a signed-in person goes to the Dashboard (or to setup if they haven't done it) |
+| `/sign-up`, `/sign-in` | Clerk's own forms, in the app's colors, linking to each other. Sign-up asks for first and last name, email and password, then lands on `/setup`; sign-in lands on the Dashboard. A signed-out visit to any other page except `/faq` is sent here and back after signing in |
 | `/setup` | Your details: units, height, weight, date of birth (typed as month/day/year, slashes filled in, or picked from a calendar with month and year menus), sex (female, male, non-binary), activity level. Reused, prefilled, to edit them later, plus optional diet notes: eating pattern, allergies or intolerances, and (for female and non-binary) pregnancy or breastfeeding |
 | `/profile` | Profile: a market member card (height, weight and age tiles, sex and activity chips, a maintenance badge, diet-note tags, Edit details) above your daily ranges, each with an ⓘ explanation. `/targets` forwards here |
 | `/faq` | How the app works, in short answers grouped by topic (the basics, your week, your ranges, food and logging), including that the ranges are estimates, not medical advice |
@@ -84,16 +89,17 @@ Shared navigation, shown once setup is done: **Dashboard · History · Profile �
 - **Leaving Add food:** picked foods stay in the "To add" list (saved for the tab), so Escape, Close or visiting New recipe never loses them.
 - **Details changed:** a new weight or activity level recalculates the ranges.
 - **Sample data:** "Load a sample 2 weeks" on `/profile` asks you to confirm on the page, then fills the 15 days before today with example meals from the built-in foods, scaled to your maintenance calories; all but one "busy day" are marked complete. Days you already logged and today are left alone, and "Clear sample data" removes only the samples (`lib/sample.ts`). It exists so graders and classmates can see the Dashboard, suggestions and History as they look after weeks of use, without entering dozens of foods.
-- **Can't save:** if the browser blocks storage (e.g. private browsing), a banner says your data won't be kept.
+- **Can't load or save:** if loading from Supabase fails, "Couldn’t load your data" with Try again; if a save fails, a message shows and the screen reloads from the database, so it never shows something that wasn't saved.
+- **USDA search:** a spinner ("Searching USDA…"), "No USDA foods match …" when nothing is found (a normal answer, not an error), and "Can't reach USDA right now. The foods above still work." with Try USDA again. Signed out, the search route answers 401.
 - **Setup errors:** next to the field and say what to do, e.g. "Enter a height between 4 ft and 7 ft 6 in" or "Enter your date of birth as month/day/year, like 02/19/1995." What you typed stays.
 - **Your own food:** name and calories are required, and numbers can't be negative; errors sit by the field and keep what you typed.
 - **Remove:** an Undo message right after, shown inside the pop-up or panel you're in.
 
 ## What's tracked
 
-The log form always shows food name, date, calories, protein, carbs and fat. The other six nutrients are optional, under "More nutrients"; a blank is unknown on the food itself, but in the weekly views a nutrient no food listed counts as 0 on a day with food (a day with nothing logged stays a gap), and the day panel says "from N of M foods" when only some listed it. Quick-add foods fill in all ten, and carry "what it adds" tags (e.g. protein, fiber, vitamin C) instead of good/bad colors. On bars, going over a minimum is never shown in red.
+The log form always shows food name, date, calories, protein, carbs and fat. The other seven nutrients are optional, under "More nutrients"; a blank is unknown on the food itself, but in the weekly views a nutrient no food listed counts as 0 on a day with food (a day with nothing logged stays a gap), and the day panel says "from N of M foods" when only some listed it. Built-in foods fill in all thirteen (dark chocolate lists no vitamin D), and carry "what it adds" tags (e.g. protein, fiber, vitamin C) instead of good/bad colors. On bars, going over a minimum is never shown in red.
 
-Every nutrient is judged on its 7-day average; the same target is shown as a daily guide on Today.
+Every nutrient is judged on its 7-day average, and the Dashboard colors each day by the 7-day average up to it.
 
 | Nutrient | Kind | Target (adults, per day) |
 |---|---|---|
@@ -107,5 +113,8 @@ Every nutrient is judged on its 7-day average; the same target is shown as a dai
 | Iron | minimum | 8 mg (M, and F 51+) / 18 mg (F 19–50) |
 | Vitamin A | minimum | 900 mcg RAE (M) / 700 mcg RAE (F) |
 | Vitamin C | minimum | 90 mg (M) / 75 mg (F) |
+| Vitamin D | minimum | 15 mcg (20 mcg after 70) |
+| Magnesium | minimum | 400 mg (M 19–30) or 420 mg (M 31+) / 310 mg (F 19–30) or 320 mg (F 31+) |
+| Sodium | limit | under 2,300 mg |
 
-Suggestions come from simple rules, with no API. They name real foods from the built-in list that are high in whatever fell short, with a button that logs one serving.
+Suggestions come from simple rules, with no API. They work at the food-group level ("Consider adding salmon, eggs or fortified milk this week"), and example foods leave out anything that clashes with the person's allergies or eating pattern (vegetarian, pescatarian, vegan, keto, paleo).
