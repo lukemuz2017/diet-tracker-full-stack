@@ -27,18 +27,19 @@ interface TipText {
 const LOW_TIPS: Partial<Record<NutrientKey, TipText>> = {
   calories: {
     text: "Consider slightly bigger portions or an extra snack, like {list}, this week.",
-    examples: [["nuts", "treeNuts"], ["yogurt", "dairy"], ["hummus", "sesame"], ["bananas"]],
+    examples: [["nuts", "treeNuts"], ["yogurt", "dairy"], ["hummus", "sesame", "legume"], ["bananas", "sugary"]],
     fallback: "Consider slightly bigger portions or an extra snack this week.",
   },
   protein: {
     text: "Consider adding protein foods, like {list}, this week.",
-    examples: [["beans"], ["eggs", "eggs"], ["fish", "fish"], ["chicken", "meat"], ["tofu", "soy"], ["lentils"]],
+    examples: [["beans", "legume"], ["eggs", "eggs"], ["fish", "fish"], ["chicken", "meat"], ["tofu", "soy", "legume"], ["lentils", "legume"]],
     fallback: "Consider adding a protein food to more meals this week.",
   },
   carbs: {
-    text: "Consider adding some grains, like {list}, this week.",
-    examples: [["rice"], ["oats"], ["whole-wheat bread", "gluten"], ["quinoa"]],
-    fallback: "Consider adding some grains this week.",
+    text: "Consider adding some carb-rich foods, like {list}, this week.",
+    examples: [["rice", "grain"], ["oats", "grain"], ["whole-wheat bread", "gluten", "grain"], ["quinoa", "grain"], ["sweet potatoes", "starchy"], ["fruit", "sugary"]],
+    // Only reached when every example clashes, as on keto, where low carbs are the point.
+    fallback: "Low carbs fit how you eat, so there's nothing to fix here.",
   },
   fat: {
     text: "Consider adding healthy fats, like {list}, this week.",
@@ -47,42 +48,42 @@ const LOW_TIPS: Partial<Record<NutrientKey, TipText>> = {
   },
   fiber: {
     text: "Consider adding {list} this week.",
-    examples: [["beans"], ["lentils"], ["whole grains"]],
-    fallback: "Consider adding more beans, vegetables and whole grains this week.",
+    examples: [["beans", "legume"], ["lentils", "legume"], ["whole grains", "grain"], ["leafy greens"], ["avocado"], ["nuts", "treeNuts"]],
+    fallback: "Consider adding more vegetables, nuts and seeds this week.",
   },
   potassium: {
     text: "Consider adding {list} this week.",
-    examples: [["potatoes"], ["beans"], ["bananas"]],
+    examples: [["potatoes", "starchy"], ["beans", "legume"], ["bananas", "sugary"], ["avocado"], ["leafy greens"]],
     fallback: "Consider adding more fruit and vegetables this week.",
   },
   calcium: {
     text: "Consider adding calcium-rich foods, like {list}, this week.",
-    examples: [["yogurt", "dairy"], ["milk", "dairy"], ["cheese", "dairy"], ["tofu", "soy"], ["fortified soy milk", "soy"], ["leafy greens"], ["fortified orange juice"]],
+    examples: [["yogurt", "dairy"], ["milk", "dairy"], ["cheese", "dairy"], ["tofu", "soy", "legume"], ["fortified soy milk", "soy", "legume"], ["leafy greens"], ["fortified orange juice"]],
     fallback: "Consider adding calcium-rich foods this week.",
   },
   iron: {
     text: "Consider adding {list} this week.",
-    examples: [["beans"], ["lentils"], ["leafy greens"]],
+    examples: [["beans", "legume"], ["lentils", "legume"], ["leafy greens"], ["red meat", "meat"]],
     fallback: "Consider adding iron-rich foods this week.",
   },
   vitaminA: {
     text: "Consider adding orange vegetables or leafy greens, like {list}, this week.",
-    examples: [["sweet potatoes"], ["carrots"], ["spinach"]],
+    examples: [["sweet potatoes", "starchy"], ["carrots"], ["spinach"]],
     fallback: "Consider adding orange vegetables or leafy greens this week.",
   },
   vitaminC: {
     text: "Consider adding fruit or peppers, like {list}, this week.",
-    examples: [["oranges"], ["strawberries"], ["bell peppers"]],
+    examples: [["oranges", "sugary"], ["strawberries"], ["bell peppers"]],
     fallback: "Consider adding fruit or peppers this week.",
   },
   vitaminD: {
     text: "Consider adding {list} this week. Sunlight helps too.",
-    examples: [["salmon", "fish"], ["eggs", "eggs"], ["fortified milk", "dairy"], ["fortified soy milk", "soy"], ["mushrooms"]],
+    examples: [["salmon", "fish"], ["eggs", "eggs"], ["fortified milk", "dairy"], ["fortified soy milk", "soy", "legume"], ["mushrooms"]],
     fallback: "Consider adding mushrooms or fortified foods this week. Sunlight helps too.",
   },
   magnesium: {
     text: "Consider adding {list} this week.",
-    examples: [["nuts", "treeNuts"], ["beans"], ["whole grains"], ["leafy greens"], ["pumpkin seeds"]],
+    examples: [["nuts", "treeNuts"], ["beans", "legume"], ["whole grains", "grain"], ["leafy greens"], ["pumpkin seeds"]],
     fallback: "Consider adding beans, whole grains or leafy greens this week.",
   },
 };
@@ -159,7 +160,7 @@ const HABITS: { title: string; tip: TipText | string; keys: (low: Set<NutrientKe
     title: "Fuller days",
     tip: {
       text: "Your days run light. Try a fuller lunch, or plan an afternoon snack like {list}.",
-      examples: [["nuts", "treeNuts"], ["yogurt", "dairy"], ["hummus", "sesame"], ["fruit"]],
+      examples: [["nuts", "treeNuts"], ["yogurt", "dairy"], ["hummus", "sesame", "legume"], ["fruit", "sugary"]],
       fallback: "Your days run light. Try a fuller lunch, or plan an afternoon snack.",
     },
     keys: (low) => (low.has("calories") && ["carbs", "protein", "fat"].some((key) => low.has(key as NutrientKey)) ? (["calories", "carbs", "protein", "fat"] as NutrientKey[]).filter((key) => low.has(key)) : []),
@@ -178,7 +179,7 @@ const HABITS: { title: string; tip: TipText | string; keys: (low: Set<NutrientKe
     title: "Protein at each meal",
     tip: {
       text: "Build each meal around a protein, like {list}.",
-      examples: [["eggs", "eggs"], ["beans"], ["fish", "fish"], ["tofu", "soy"], ["chicken", "meat"], ["lentils"]],
+      examples: [["eggs", "eggs"], ["beans", "legume"], ["fish", "fish"], ["tofu", "soy", "legume"], ["chicken", "meat"], ["lentils", "legume"]],
       fallback: "Build each meal around a protein.",
     },
     keys: (low) => (low.has("protein") ? ["protein"] : []),
@@ -187,7 +188,7 @@ const HABITS: { title: string; tip: TipText | string; keys: (low: Set<NutrientKe
     title: "Mix in minerals",
     tip: {
       text: "Add foods like {list} to one meal a day.",
-      examples: [["yogurt", "dairy"], ["leafy greens"], ["beans"], ["tofu", "soy"]],
+      examples: [["yogurt", "dairy"], ["leafy greens"], ["beans", "legume"], ["tofu", "soy", "legume"]],
       fallback: "Add a calcium- or iron-rich food to one meal a day.",
     },
     keys: (low) => (["calcium", "iron"] as NutrientKey[]).filter((key) => low.has(key)),

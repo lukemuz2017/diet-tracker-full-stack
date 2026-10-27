@@ -268,6 +268,16 @@ function MemberCard({ profile, today }: { profile: Profile; today: string }) {
             {diet.lifeStage !== "none" && <li className="rounded-full bg-band px-3 py-1 text-sm font-bold">{lifeStage.short}</li>}
           </ul>
         )}
+        {diet.pattern === "keto" && (
+          <p className="text-[13px] text-muted">
+            Keto isn’t built into your ranges, so carbs will read low and fat high. That’s expected. Suggestions and food flags follow keto.
+          </p>
+        )}
+        {diet.pattern === "paleo" && (
+          <p className="text-[13px] text-muted">
+            Paleo leaves out dairy and legumes, so calcium can run low. Leafy greens, canned fish with bones and fortified foods help.
+          </p>
+        )}
         {diet.pattern === "vegan" && (
           <p className="text-[13px] text-muted">
             Vegan diets need a vitamin B12 source, like fortified foods or a supplement. This app doesn’t track B12.

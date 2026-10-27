@@ -72,7 +72,7 @@ const SECTIONS: { title: string; tone: string; questions: { q: string; a: ReactN
       },
       {
         q: "How do allergies and eating patterns work?",
-        a: "They don’t change your ranges. Built-in foods that clash are flagged when you search (for example, “Contains dairy” or “Not vegan”), and suggestions only name foods that fit. Foods you add yourself aren’t checked, so read their labels.",
+        a: "They don’t change your ranges. Built-in foods that clash are flagged when you search (for example, “Contains dairy”, “Not vegan” or “Not keto”), and suggestions only name foods that fit. Keto and paleo guide suggestions the same way; they don’t change your ranges, so on keto carbs will read low. Foods you add yourself aren’t checked, so read their labels.",
       },
     ],
   },

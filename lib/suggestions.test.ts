@@ -121,3 +121,24 @@ test("suggestions wait for 3 complete days", () => {
   const three = summarize(window({ ...balanced, carbs: 100 }, 3), targets, []);
   assert.deepEqual([three.verdict, three.tiles.length, three.daysToGo], ["mostly", 3, 0]);
 });
+
+test("keto and paleo suggestions leave out the foods they don't eat", () => {
+  const tipFor = (pattern: "keto" | "paleo", averages: Parameters<typeof window>[0]) =>
+    summarize(window(averages), targets, [], { allergies: [], pattern }).tiles[1].tip;
+
+  const ketoProtein = tipFor("keto", { ...balanced, protein: 30 });
+  assert.ok(ketoProtein.includes("**eggs**") && !/beans|lentils|tofu/.test(ketoProtein));
+  const paleoProtein = tipFor("paleo", { ...balanced, protein: 30 });
+  assert.ok(paleoProtein.includes("**eggs**") && !/beans|lentils|tofu/.test(paleoProtein));
+
+  // Low carbs never get "add grains" on keto, where low carbs are the point; paleo gets starchy vegetables and fruit.
+  const ketoCarbs = tipFor("keto", { ...balanced, carbs: 100 });
+  assert.ok(ketoCarbs.includes("nothing to fix") && !/rice|oats|bread|potato/.test(ketoCarbs));
+  const paleoCarbs = tipFor("paleo", { ...balanced, carbs: 100 });
+  assert.ok(paleoCarbs.includes("**sweet potatoes**") && !/rice|oats|bread/.test(paleoCarbs));
+
+  // Fiber and calcium still have something to suggest.
+  assert.ok(tipFor("keto", { ...balanced, fiber: 10 }).includes("**leafy greens**"));
+  assert.ok(tipFor("paleo", { ...balanced, calcium: 500 }).includes("**leafy greens**"));
+  assert.ok(!tipFor("paleo", { ...balanced, calcium: 500 }).includes("yogurt"));
+});

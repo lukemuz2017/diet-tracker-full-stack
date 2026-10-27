@@ -1,28 +1,44 @@
 // What each built-in food contains, for the diet notes on the profile:
 // allergens (FDA's nine major allergens, gluten for celiac disease) and
-// meat or fish for eating patterns. Only definite ingredients are tagged;
+// meat, fish, grains, legumes and so on for eating patterns. Only definite ingredients are tagged;
 // custom foods and recipes have no tags, so they never show a warning.
 
 import { ALLERGEN_OPTIONS, type Allergen, type Diet, type Pattern } from "./profile.ts";
 
-export type Tag = Allergen | "meat";
+/** What a food is, for eating patterns: meat, grain, legume, starchy vegetable, sugary food, processed food. */
+export type Tag = Allergen | "meat" | "grain" | "legume" | "starchy" | "sugary" | "processed";
 
 const FOOD_TAGS: Record<string, Tag[]> = {
-  peanutButter: ["peanuts"],
+  banana: ["sugary"],
+  apple: ["sugary"],
+  orange: ["sugary"],
+  sweetPotato: ["starchy"],
+  potato: ["starchy"],
+  peanutButter: ["peanuts", "legume"],
   almonds: ["treeNuts"],
   milk: ["dairy"],
   cheddar: ["dairy"],
   greekYogurt: ["dairy"],
-  cheesePizza: ["dairy", "gluten"],
+  cheesePizza: ["dairy", "gluten", "grain", "processed"],
   egg: ["eggs"],
-  wholeWheatBread: ["gluten"],
-  pasta: ["gluten"],
-  tofu: ["soy"],
+  wholeWheatBread: ["gluten", "grain"],
+  pasta: ["gluten", "grain"],
+  oatmeal: ["grain"],
+  brownRice: ["grain"],
+  whiteRice: ["grain"],
+  quinoa: ["grain"],
+  tofu: ["soy", "legume"],
+  blackBeans: ["legume"],
+  lentils: ["legume"],
+  chickpeas: ["legume"],
   salmon: ["fish"],
   tuna: ["fish"],
-  hummus: ["sesame"],
+  hummus: ["sesame", "legume"],
   chickenBreast: ["meat"],
   groundBeef: ["meat"],
+  orangeJuice: ["sugary"],
+  cola: ["sugary", "processed"],
+  granolaBar: ["grain", "sugary", "processed"],
 };
 
 /** What each eating pattern leaves out. */
@@ -31,6 +47,10 @@ export const PATTERN_EXCLUDES: Record<Pattern, Tag[]> = {
   vegetarian: ["meat", "fish", "shellfish"],
   pescatarian: ["meat"],
   vegan: ["meat", "fish", "shellfish", "dairy", "eggs"],
+  // Keto: very low carb, so no grains, legumes, starchy vegetables or sugary foods.
+  keto: ["grain", "legume", "starchy", "sugary"],
+  // Paleo: no grains, legumes, dairy or processed foods.
+  paleo: ["grain", "legume", "dairy", "processed"],
 };
 
 /** Whether a set of tags clashes with the person's allergies or eating pattern. */

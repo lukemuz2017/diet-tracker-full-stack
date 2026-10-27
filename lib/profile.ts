@@ -8,7 +8,7 @@ export type Units = "us" | "metric";
 export type Sex = "female" | "male" | "nonbinary";
 export type Activity = "sedentary" | "light" | "moderate" | "very";
 export type Allergen = "peanuts" | "treeNuts" | "dairy" | "eggs" | "gluten" | "soy" | "fish" | "shellfish" | "sesame";
-export type Pattern = "everything" | "vegetarian" | "pescatarian" | "vegan";
+export type Pattern = "everything" | "vegetarian" | "pescatarian" | "vegan" | "keto" | "paleo";
 export type LifeStage = "none" | "pregnant1" | "pregnant2" | "pregnant3" | "breastfeeding06" | "breastfeeding712";
 
 export interface Profile {
@@ -44,6 +44,8 @@ export const PATTERN_OPTIONS: { value: Pattern; label: string }[] = [
   { value: "vegetarian", label: "Vegetarian" },
   { value: "pescatarian", label: "Pescatarian" },
   { value: "vegan", label: "Vegan" },
+  { value: "keto", label: "Keto" },
+  { value: "paleo", label: "Paleo" },
 ];
 
 export const LIFE_STAGE_OPTIONS: { value: LifeStage; label: string; short: string }[] = [
