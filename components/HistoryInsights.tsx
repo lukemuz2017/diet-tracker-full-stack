@@ -18,18 +18,17 @@ export function WhereFrom({ data, summary, nutrient: key }: { data: SavedData; s
   const perDay = (value: number) => formatValue(value / counted.size);
 
   if (counted.size === 0) {
-    return <p className="text-[15px]">No complete days in this week yet, so there’s nothing to add up. Mark a day complete on the Dashboard.</p>;
+    return <p className="text-[15px] text-muted">No complete days this week.</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[15px] text-muted">
-        The foods behind your {label.toLowerCase()}, over the {counted.size} {counted.size === 1 ? "day" : "days"} that count.
+        Top sources over {counted.size} {counted.size === 1 ? "day" : "days"}.
       </p>
       {total === 0 ? (
         <p className="text-[15px]">
-          None of the foods in these days list {label.toLowerCase()} yet. Foods you add yourself only have what you type in, and meals logged before
-          this nutrient was tracked don’t have it.
+          No foods this week list {label.toLowerCase()}.
         </p>
       ) : (
         <>

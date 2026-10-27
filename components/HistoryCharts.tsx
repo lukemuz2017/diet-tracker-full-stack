@@ -103,8 +103,8 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] text-muted">
-        The shaded band is the target for your average, not a goal for each day.
-        {target.upper !== undefined && ` Safe upper limit: ${formatValue(target.upper)} ${unit}.`}
+        Shaded: the target for your average.
+        {target.upper !== undefined && ` Safe limit: ${formatValue(target.upper)} ${unit}.`}
       </p>
 
       <ViewToggle onToggle={() => setAsTable(!asTable)}>{asTable ? "Show as a chart" : "Show as a table"}</ViewToggle>
@@ -160,11 +160,11 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
             <path d="M1 5h20" stroke="var(--color-soil)" strokeWidth="2" />
             <circle cx="11" cy="5" r="3.5" fill="var(--color-soil)" />
           </svg>
-          Line: your average as the days add up
+          Running average
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden="true" className={`inline-block size-3 rounded-sm ${averageFill}`} />
-          Days that count, colored by your average
+          Counted
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden="true" className="inline-block size-3 rounded-sm bg-kraft" />

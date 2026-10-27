@@ -104,7 +104,6 @@ export function WeekRibbons({
           {/* Column headers: each day's badge opens that day. */}
           <div className={`${GRID} pb-2`}>
             <span className={`${PINNED} flex items-center pr-2 text-xs text-muted`}>
-              <span className="max-sm:hidden">Pick a day or a nutrient</span>
               {/* Phone: step through the week a few days at a time. */}
               <span className="flex gap-1 sm:hidden">
                 <button
@@ -241,7 +240,7 @@ export function WeekRibbons({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span className="font-bold">Each row is colored by its average:</span>
+        <span className="font-bold">Row color is the average:</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-lemon align-[-2px]" />Under</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-carrot align-[-2px]" />Over</span>

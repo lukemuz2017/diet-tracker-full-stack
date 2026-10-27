@@ -9,7 +9,7 @@ import { COMPARE_MIN_DAYS, compareWeeks } from "@/lib/insights";
 import { formatValue } from "@/lib/log";
 import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
 import type { SavedData } from "@/lib/storage";
-import { formatTarget, type Targets } from "@/lib/targets";
+import type { Targets } from "@/lib/targets";
 import { WINDOW_DAYS, summarizeWindow, type WindowDay } from "@/lib/week";
 
 // The same nutrient over two weeks: the picked week's seven days drawn over the
@@ -76,19 +76,17 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
           ))}
         </ul>
         {row && (
-          <p className="flex flex-wrap items-center gap-2 text-[15px]">
+          <p>
             <ChangeCell row={row} />
-            <span className="text-[13px] text-muted">from the earlier week to the later one</span>
           </p>
         )}
         {!comparison.ready && (
           <p className="text-[13px] text-muted">
-            Comparing the averages needs at least {COMPARE_MIN_DAYS} complete days in each week. {range(current)} has {comparison.current}, {range(previous)} has{" "}
-            {comparison.previous}.
+            Needs {COMPARE_MIN_DAYS} complete days in each week to compare: {comparison.current} and {comparison.previous}.
           </p>
         )}
         <p className="text-[13px] text-muted">
-          Shaded band: {formatTarget(key, target)}. Averages are of the complete days in each week.
+          Shaded: the target for your average.
         </p>
       </div>
 

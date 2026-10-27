@@ -167,7 +167,7 @@ function ChartsBody({
  * how many days it rests on. The charts below show how the days added up to it.
  */
 function AverageHeader({ summary, targets, nutrient }: { summary: WindowSummary; targets: Targets; nutrient: NutrientKey }) {
-  const { label, unit } = NUTRIENTS[nutrient];
+  const { unit } = NUTRIENTS[nutrient];
   const target = targets[nutrient];
   const average = summary.averages[nutrient];
   const days = summary.coverage[nutrient].days;
@@ -179,11 +179,10 @@ function AverageHeader({ summary, targets, nutrient }: { summary: WindowSummary;
       <div className="flex flex-col">
         <span className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Average · {range}</span>
         <span className="font-display text-2xl font-extrabold leading-tight">
-          {average === undefined || summary.counted === 0 ? "No average yet" : `${formatValue(average)} ${unit} a day`}
+          {average === undefined || summary.counted === 0 ? "No average yet" : `${formatValue(average)} ${unit}`}
         </span>
         <span className="text-[13px] text-muted">
-          {label} target {formatTarget(nutrient, target)} ·{" "}
-          {days === 0 ? "no complete days with a value" : `of ${days} complete ${days === 1 ? "day" : "days"}`}
+          Target {formatTarget(nutrient, target)} · {days === 0 ? "no complete days" : `${days} ${days === 1 ? "day" : "days"}`}
         </span>
       </div>
       <StatusChip status={status.kind} words>
