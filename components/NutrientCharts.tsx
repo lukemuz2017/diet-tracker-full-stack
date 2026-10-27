@@ -14,7 +14,7 @@ import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { computeTargets, formatTarget, type Targets } from "@/lib/targets";
 import { withUsual } from "@/lib/usual";
-import { WINDOW_DAYS, summarizeWindow, type WindowSummary } from "@/lib/week";
+import { WINDOW_DAYS, rollingWindow, summarizeWindow, type WindowSummary } from "@/lib/week";
 
 // The charts for one nutrient, in a pop-up opened from the Dashboard's nutrient
 // detail: how it moved day by day, which foods it came from, and how the picked week compares with the one before. A week control
@@ -74,6 +74,11 @@ function ChartsBody({
 
   const targets = withUsual(computeTargets(profile, today), data, end);
   const summary = summarizeWindow(data, end, targets);
+  const base = computeTargets(profile, today);
+  const rolling = rollingWindow(data, end, (date) => withUsual(base, data, date)).map((day) => ({
+    average: day.averages[nutrient],
+    status: statusFor(nutrient, day.targets[nutrient], day.counted > 0 ? day.averages[nutrient] : undefined).kind,
+  }));
   // Nothing to look back at before the first food was logged.
   const earliest = data.entries.reduce((first, entry) => (entry.date < first ? entry.date : first), today);
   const atEarliest = end <= earliest;
@@ -152,7 +157,7 @@ function ChartsBody({
       {tab !== "compare" && <AverageHeader summary={summary} targets={targets} nutrient={nutrient} />}
 
       {tab === "trend" ? (
-        <NutrientByDay summary={summary} targets={targets} nutrient={nutrient} />
+        <NutrientByDay summary={summary} targets={targets} nutrient={nutrient} rolling={rolling} />
       ) : tab === "sources" ? (
         <WhereFrom data={data} summary={summary} nutrient={nutrient} />
       ) : (

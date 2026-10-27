@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Entry } from "./storage.ts";
 import type { Targets } from "./targets.ts";
-import { currentWindowEnd, runningAverages, summarizeWindow, windowDates } from "./week.ts";
+import { currentWindowEnd, rollingWindow, summarizeWindow, windowDates } from "./week.ts";
 
 const TODAY = "2026-10-18";
 const targets = {
@@ -78,13 +78,25 @@ test("a past window works the same as the current one", () => {
   assert.equal(s.counted, 1); // Oct 16 is outside Oct 9–15
 });
 
-test("the running average builds up from complete days and ends at the average", () => {
+test("each day's rolling average covers the 7 days ending on it and ends at the window average", () => {
   const entries = [food("2026-10-12", 1800), food("2026-10-13", 900), food("2026-10-14", 2400)];
-  const s = summarizeWindow({ entries, completeDays: ["2026-10-12", "2026-10-14"] }, TODAY, targets);
-  const running = runningAverages(s, "calories");
-  // Window Oct 12–18: Oct 13 is logged but not marked, so it doesn't move the line.
-  assert.deepEqual(running, [1800, 1800, 2100, 2100, 2100, 2100, 2100]);
-  assert.equal(running.at(-1), s.averages.calories);
+  const data = { entries, completeDays: ["2026-10-12", "2026-10-14"] };
+  const rolling = rollingWindow(data, TODAY, () => targets);
+  // Window Oct 12-18: Oct 13 is logged but not marked, so it doesn't move the average.
+  assert.deepEqual(rolling.map((day) => day.averages.calories), [1800, 1800, 2100, 2100, 2100, 2100, 2100]);
+  assert.deepEqual(rolling.map((day) => day.counted), [1, 1, 2, 2, 2, 2, 2]);
+  assert.equal(rolling.at(-1)!.averages.calories, summarizeWindow(data, TODAY, targets).averages.calories);
+});
+
+test("a rolling average reaches back before the window, and a day with nothing counted has none", () => {
+  const entries = [food("2026-10-08", 1000), food("2026-10-12", 1800)];
+  const rolling = rollingWindow({ entries, completeDays: ["2026-10-08", "2026-10-12"] }, TODAY, () => targets);
+  // Oct 12's 7 days are Oct 6-12, so Oct 8 counts too.
+  assert.equal(rolling[0].averages.calories, 1400);
+  // By Oct 18 (Oct 12-18) Oct 8 has dropped out.
+  assert.equal(rolling.at(-1)!.averages.calories, 1800);
+  const empty = rollingWindow({ entries: [], completeDays: [] }, TODAY, () => targets);
+  assert.ok(empty.every((day) => day.counted === 0 && day.averages.calories === undefined));
 });
 
 test("the window ends yesterday until today is marked complete", () => {

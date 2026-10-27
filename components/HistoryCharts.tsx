@@ -3,15 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { ViewToggle } from "@/components/ui/ViewToggle";
 import { formatDay, formatShortDay } from "@/lib/dates";
-import { formatValue, statusFor } from "@/lib/log";
+import { formatValue, statusFor, type StatusKind } from "@/lib/log";
 import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
 import type { Target, Targets } from "@/lib/targets";
-import { runningAverages, type WindowSummary } from "@/lib/week";
+import type { WindowSummary } from "@/lib/week";
 
 // Charts for History (dataviz skill): one measure per chart, recessive grid,
 // status color always paired with words (tooltip, table), and a table view.
 
-// Every bar takes the color of the week's average status, like the nutrient's row on the Dashboard.
+// Every bar takes the color of that day's 7-day average status, like its cell on the Dashboard.
 const AVERAGE_FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carrot", unknown: "bg-track" } as const;
 const STATE_WORDS = { complete: "", open: " · not marked complete, not counted", missed: "" } as const;
 
@@ -84,15 +84,25 @@ function RunningLine({ running, top, width, height, unit }: { running: (number |
 }
 
 /** One nutrient for each of the 7 days against its target (shaded band), with the running average over the bars. */
-export function NutrientByDay({ summary, targets, nutrient: key }: { summary: WindowSummary; targets: Targets; nutrient: NutrientKey }) {
+export function NutrientByDay({
+  summary,
+  targets,
+  nutrient: key,
+  rolling,
+}: {
+  summary: WindowSummary;
+  targets: Targets;
+  nutrient: NutrientKey;
+  /** Each day's 7-day average up to it, and where that stands against the target. */
+  rolling: { average: number | undefined; status: StatusKind }[];
+}) {
   const [active, setActive] = useState<string | null>(null);
   const [asTable, setAsTable] = useState(false);
   const target = targets[key];
   const { label, unit } = NUTRIENTS[key];
   const values = summary.days.map((day) => day.totals[key] ?? 0);
   const band = bandFor(target, values);
-  const running = runningAverages(summary, key);
-  const averageFill = AVERAGE_FILL[statusFor(key, target, summary.counted > 0 ? summary.averages[key] : undefined).kind];
+  const running = rolling.map((day) => day.average);
   const [plotRef, plot] = useSize<HTMLOListElement>();
   const y = (value: number) => `${(value / band.top) * 100}%`;
   const describe = (day: WindowSummary["days"][number]) => {
@@ -123,7 +133,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
           {summary.days.map((day, index) => {
             const value = day.totals[key];
             const average = running[index];
-            const tip = `${formatShortDay(day.date)}: ${describe(day)}${STATE_WORDS[day.state]}${average === undefined ? "" : ` · average so far ${formatValue(average)} ${unit}`}`;
+            const tip = `${formatShortDay(day.date)}: ${describe(day)}${STATE_WORDS[day.state]}${average === undefined ? "" : ` · 7-day average ${formatValue(average)} ${unit}`}`;
             return (
               <li key={day.date} className="relative flex h-full flex-col justify-end" onMouseEnter={() => setActive(day.date)} onMouseLeave={() => setActive(null)}>
                 {active === day.date && (
@@ -139,7 +149,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
                   <span className="mx-auto h-1.5 w-full rounded-full border-[1.5px] border-dashed border-field" />
                 ) : (
                   <span
-                    className={`w-full rounded-t-[4px] ${day.state === "complete" ? averageFill : "bg-kraft"}`}
+                    className={`w-full rounded-t-[4px] ${day.state === "complete" ? AVERAGE_FILL[rolling[index].status] : "bg-kraft"}`}
                     style={{ height: y(value) }}
                   />
                 )}
@@ -160,12 +170,9 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
             <path d="M1 5h20" stroke="var(--color-soil)" strokeWidth="2" />
             <circle cx="11" cy="5" r="3.5" fill="var(--color-soil)" />
           </svg>
-          Running average
+          7-day average
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span aria-hidden="true" className={`inline-block size-3 rounded-sm ${averageFill}`} />
-          Counted
-        </span>
+        <span>Color: 7-day average to that day</span>
         <span className="inline-flex items-center gap-1.5">
           <span aria-hidden="true" className="inline-block size-3 rounded-sm bg-kraft" />
           Incomplete
@@ -188,7 +195,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
               <th scope="col" className="whitespace-nowrap py-2 pl-4 text-right font-normal">
                 {label} ({unit})
               </th>
-              <th scope="col" className="whitespace-nowrap py-2 pl-6 text-right font-normal">Average so far</th>
+              <th scope="col" className="whitespace-nowrap py-2 pl-6 text-right font-normal">7-day average</th>
               <th scope="col" className="py-2 pl-6 font-normal">Day vs. range</th>
             </tr>
           </thead>

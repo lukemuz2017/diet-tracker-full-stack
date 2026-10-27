@@ -88,20 +88,28 @@ export function summarizeWindow(
   };
 }
 
+/** One day's 7-day average: the average of the complete days in the 7 days ending on it. */
+export interface RollingDay {
+  date: string;
+  averages: Nutrients;
+  /** Complete days it rests on. */
+  counted: number;
+  /** The targets as of that day (the "usual" baseline moves with it). */
+  targets: Targets;
+}
+
 /**
- * The 7-day average as it builds up through the window: for each day, the
- * average of the complete days so far (undefined until one has a value).
- * Days that don't count leave it where it was. The last value is the average.
+ * For each of the 7 days ending on `end`, the 7-day average up to that day,
+ * using days before the window when needed. The last entry is the window's average.
  */
-export function runningAverages(summary: WindowSummary, key: NutrientKey): (number | undefined)[] {
-  let sum = 0;
-  let count = 0;
-  return summary.days.map((day) => {
-    const value = day.totals[key];
-    if (day.state === "complete" && value !== undefined) {
-      sum += value;
-      count++;
-    }
-    return count > 0 ? sum / count : undefined;
+export function rollingWindow(
+  data: { entries: Entry[]; completeDays: string[] },
+  end: string,
+  targetsFor: (date: string) => Targets,
+): RollingDay[] {
+  return windowDates(end).map((date) => {
+    const targets = targetsFor(date);
+    const { averages, counted } = summarizeWindow(data, date, targets);
+    return { date, averages, counted, targets };
   });
 }

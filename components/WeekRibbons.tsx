@@ -14,7 +14,7 @@ import { NUTRIENT_GROUPS, NUTRIENTS, WHY, type NutrientKey } from "@/lib/nutrien
 import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { computeTargets } from "@/lib/targets";
-import { WINDOW_DAYS, summarizeWindow, type DayState } from "@/lib/week";
+import { WINDOW_DAYS, rollingWindow, summarizeWindow, type DayState } from "@/lib/week";
 
 const CELL: Record<string, string> = {
   "in-range": "bg-leaf",
@@ -91,10 +91,15 @@ export function WeekRibbons({
   const dayLabel = (date: string) => (date === today ? "Today" : formatDay(date).slice(0, 3));
   const dayName = (date: string) => (date === today ? "Today" : date === addDays(today, -1) ? "Yesterday" : formatDay(date));
 
-  const dayShare = summary.days.map((day) => {
-    const known = SCORED_KEYS.filter((key) => day.totals[key] !== undefined);
+  // Each day's 7-day average up to that day: its cell colors and its ring.
+  const base = computeTargets(profile, today);
+  const rolling = rollingWindow(data, end, (date) => withUsual(base, data, date));
+  const dayShare = summary.days.map((day, index) => {
+    if (day.foods === 0) return null;
+    const { averages, targets: dayTargets } = rolling[index];
+    const known = SCORED_KEYS.filter((key) => averages[key] !== undefined);
     if (known.length === 0) return null;
-    return known.filter((key) => statusFor(key, targets[key], day.totals[key]).kind === "in-range").length / known.length;
+    return known.filter((key) => statusFor(key, dayTargets[key], averages[key]).kind === "in-range").length / known.length;
   });
 
   return (
@@ -184,12 +189,16 @@ export function WeekRibbons({
                   {summary.days.map((day, index) => {
                     const value = day.totals[key];
                     const pending = day.foods > 0 && !COUNTED.includes(day.state);
+                    const rollAverage = rolling[index].averages[key];
+                    const rollStatus = rollAverage === undefined ? undefined : statusFor(key, rolling[index].targets[key], rollAverage);
                     const words =
                       day.foods === 0
                         ? "not logged"
                         : value === undefined
                           ? "no value"
-                          : `${formatValue(value)} ${unit}${pending ? ", not marked complete" : ""}`;
+                          : pending
+                            ? `${formatValue(value)} ${unit}, not marked complete`
+                            : `${formatValue(value)} ${unit} that day, 7-day average ${rollAverage === undefined ? "none" : `${formatValue(rollAverage)} ${unit}, ${rollStatus!.text.toLowerCase()}`}`;
                     return (
                       <button
                         key={day.date}
@@ -202,9 +211,9 @@ export function WeekRibbons({
                             ? "border-[1.5px] border-dashed border-field"
                             : pending
                               ? "bg-kraft"
-                              : value === undefined
+                              : rollStatus === undefined || value === undefined
                                 ? CELL.unknown
-                                : CELL[status.kind]
+                                : CELL[rollStatus.kind]
                         }`}
                       />
                     );
@@ -240,7 +249,7 @@ export function WeekRibbons({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        <span className="font-bold">Row color is the average:</span>
+        <span className="font-bold">Color: 7-day average to that day:</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-lemon align-[-2px]" />Under</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-carrot align-[-2px]" />Over</span>
