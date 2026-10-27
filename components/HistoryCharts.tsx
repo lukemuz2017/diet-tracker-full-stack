@@ -5,13 +5,14 @@ import { ViewToggle } from "@/components/ui/ViewToggle";
 import { formatDay, formatShortDay } from "@/lib/dates";
 import { formatValue, statusFor } from "@/lib/log";
 import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
-import { formatTarget, type Target, type Targets } from "@/lib/targets";
+import type { Target, Targets } from "@/lib/targets";
 import { runningAverages, type WindowSummary } from "@/lib/week";
 
 // Charts for History (dataviz skill): one measure per chart, recessive grid,
 // status color always paired with words (tooltip, table), and a table view.
 
-const STATUS_FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carrot", unknown: "bg-track" } as const;
+// Every bar takes the color of the week's average status, like the nutrient's row on the Dashboard.
+const AVERAGE_FILL = { "to-go": "bg-lemon", "in-range": "bg-leaf", over: "bg-carrot", unknown: "bg-track" } as const;
 const STATE_WORDS = { complete: "", open: " · not marked complete, not counted", missed: "" } as const;
 
 /** Where the shaded "good" band sits for a target, and which edges get a label. */
@@ -29,8 +30,6 @@ export function bandFor(target: Target, values: number[]) {
   }
   return { top, from: 0, to: target.max!, edges: [target.max!] };
 }
-
-const BAND_WORDS: Record<Target["kind"], string> = { range: "your range", min: "at or above your target", max: "under your limit", usual: "within your usual" };
 
 /** Gap between the day columns (Tailwind gap-2), so the line meets each bar's center. */
 const COLUMN_GAP = 8;
@@ -93,6 +92,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
   const values = summary.days.map((day) => day.totals[key] ?? 0);
   const band = bandFor(target, values);
   const running = runningAverages(summary, key);
+  const averageFill = AVERAGE_FILL[statusFor(key, target, summary.counted > 0 ? summary.averages[key] : undefined).kind];
   const [plotRef, plot] = useSize<HTMLOListElement>();
   const y = (value: number) => `${(value / band.top) * 100}%`;
   const describe = (day: WindowSummary["days"][number]) => {
@@ -103,8 +103,8 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
   return (
     <div className="flex flex-col gap-4">
       <p className="text-[13px] text-muted">
-        Shaded band: {BAND_WORDS[target.kind]}, {formatTarget(key, target)}
-        {target.upper !== undefined && ` (safe upper limit ${formatValue(target.upper)} ${unit})`}
+        The shaded band is the target for your average, not a goal for each day.
+        {target.upper !== undefined && ` Safe upper limit: ${formatValue(target.upper)} ${unit}.`}
       </p>
 
       <ViewToggle onToggle={() => setAsTable(!asTable)}>{asTable ? "Show as a chart" : "Show as a table"}</ViewToggle>
@@ -122,7 +122,6 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
         <ol ref={plotRef} className="relative grid h-full grid-cols-7 items-end gap-2">
           {summary.days.map((day, index) => {
             const value = day.totals[key];
-            const status = statusFor(key, target, value).kind;
             const average = running[index];
             const tip = `${formatShortDay(day.date)}: ${describe(day)}${STATE_WORDS[day.state]}${average === undefined ? "" : ` · average so far ${formatValue(average)} ${unit}`}`;
             return (
@@ -140,7 +139,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
                   <span className="mx-auto h-1.5 w-full rounded-full border-[1.5px] border-dashed border-field" />
                 ) : (
                   <span
-                    className={`w-full rounded-t-[4px] ${STATUS_FILL[status]} ${day.state !== "complete" ? "opacity-60" : ""}`}
+                    className={`w-full rounded-t-[4px] ${day.state === "complete" ? averageFill : "bg-kraft"}`}
                     style={{ height: y(value) }}
                   />
                 )}
@@ -163,7 +162,14 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
           </svg>
           Line: your average as the days add up
         </span>
-        <span>Faded bars: not marked complete</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className={`inline-block size-3 rounded-sm ${averageFill}`} />
+          Days that count, colored by your average
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="inline-block size-3 rounded-sm bg-kraft" />
+          Incomplete
+        </span>
       </p>
 
       </div>
@@ -183,7 +189,7 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
                 {label} ({unit})
               </th>
               <th scope="col" className="whitespace-nowrap py-2 pl-6 text-right font-normal">Average so far</th>
-              <th scope="col" className="py-2 pl-6 font-normal">Status</th>
+              <th scope="col" className="py-2 pl-6 font-normal">Day vs. range</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">

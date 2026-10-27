@@ -1,5 +1,5 @@
 // A day's highlights in the day panel: up to three nutrients it got in range
-// (the harder wins first) and at most one heads-up for something over.
+// (the harder wins first) and at most one note on something that ran over.
 
 import { statusFor } from "./log.ts";
 import { NUTRIENTS, type NutrientKey, type Nutrients } from "./nutrients.ts";
@@ -22,6 +22,6 @@ export function dayHighlights(totals: Nutrients, targets: Targets): Highlights {
     .slice(0, MAX_WINS)
     .map((key) => (key === "fiber" ? "High in fiber" : NUTRIENTS[key].label));
   const over = HEADS_UP_ORDER.find((key) => totals[key] !== undefined && statusFor(key, targets[key], totals[key]).kind === "over");
-  const headsUp = over === undefined ? undefined : `Heads up: ${NUTRIENTS[over].label.toLowerCase()} high`;
+  const headsUp = over === undefined ? undefined : `${NUTRIENTS[over].label} ran high`;
   return { wins, headsUp };
 }

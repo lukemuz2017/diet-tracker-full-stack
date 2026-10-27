@@ -39,7 +39,7 @@ flowchart LR
   subgraph CB["3 · Coming back"]
     direction TB
     R(["Return visit"]) --> W["Dashboard · /log<br/>Going well · Could improve · Bigger picture"]
-    W --> G["Week grid<br/>a cell per nutrient per day<br/>brown = not marked complete"]
+    W --> G["Week grid<br/>a cell per nutrient per day<br/>row colored by its 7-day average<br/>brown = not marked complete"]
     G -- "pick a day" --> P["Day panel<br/>meals · fix amounts · Mark complete"]
     G -- "pick a nutrient" --> N["Nutrient detail<br/>each day and its top source"]
     W --> H["History · /history<br/>earlier weeks · chart with running average"]

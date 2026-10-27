@@ -15,7 +15,7 @@ test("foods that fit, and custom foods, have no warnings", () => {
 });
 
 test("keto flags grains, legumes, starchy and sugary foods; paleo flags grains, legumes, dairy and processed foods", () => {
-  const keto = { allergies: [], pattern: "keto" } as const;
+  const keto = { allergies: [], pattern: "keto" as const };
   assert.deepEqual(warningsFor("brownRice", keto), ["Not keto"]);
   assert.deepEqual(warningsFor("potato", keto), ["Not keto"]);
   assert.deepEqual(warningsFor("banana", keto), ["Not keto"]);
@@ -23,7 +23,7 @@ test("keto flags grains, legumes, starchy and sugary foods; paleo flags grains, 
   // Meat, fish, eggs, dairy and avocado fit keto.
   for (const id of ["chickenBreast", "salmon", "egg", "cheddar", "avocado", "oliveOil"]) assert.deepEqual(warningsFor(id, keto), [], id);
 
-  const paleo = { allergies: [], pattern: "paleo" } as const;
+  const paleo = { allergies: [], pattern: "paleo" as const };
   assert.deepEqual(warningsFor("greekYogurt", paleo), ["Not paleo"]);
   assert.deepEqual(warningsFor("lentils", paleo), ["Not paleo"]);
   assert.deepEqual(warningsFor("granolaBar", paleo), ["Not paleo"]);

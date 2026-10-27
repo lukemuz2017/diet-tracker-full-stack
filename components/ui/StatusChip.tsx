@@ -16,8 +16,20 @@ const styles: Record<Status, string> = {
  * still for reduced motion). The words stay for screen readers. Under, over
  * and unknown keep their words, since they need them.
  */
-export function StatusChip({ status, delay = 0, children }: { status: Status; /** ms, to stagger a column of them */ delay?: number; children: ReactNode }) {
-  if (status === "in-range") {
+export function StatusChip({
+  status,
+  delay = 0,
+  words = false,
+  children,
+}: {
+  status: Status;
+  /** ms, to stagger a column of them */
+  delay?: number;
+  /** Show the words even for in range, instead of the check badge. */
+  words?: boolean;
+  children: ReactNode;
+}) {
+  if (status === "in-range" && !words) {
     return (
       <span
         className="check-badge inline-flex size-7 items-center justify-center rounded-full bg-leaf text-white"

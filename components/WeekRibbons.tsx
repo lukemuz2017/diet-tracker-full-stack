@@ -184,14 +184,13 @@ export function WeekRibbons({
                   </button>
                   {summary.days.map((day, index) => {
                     const value = day.totals[key];
-                    const dayStatus = statusFor(key, targets[key], value);
                     const pending = day.foods > 0 && !COUNTED.includes(day.state);
                     const words =
                       day.foods === 0
                         ? "not logged"
                         : value === undefined
                           ? "no value"
-                          : `${formatValue(value)} ${unit}, ${dayStatus.text.toLowerCase()}${pending ? ", not marked complete" : ""}`;
+                          : `${formatValue(value)} ${unit}${pending ? ", not marked complete" : ""}`;
                     return (
                       <button
                         key={day.date}
@@ -200,7 +199,13 @@ export function WeekRibbons({
                         aria-label={`${label}, ${dayName(day.date)}: ${words}`}
                         title={`${dayName(day.date)}: ${words}`}
                         className={`h-6 rounded-md ${hideOnPhone(index)} ${
-                          day.foods === 0 ? "border-[1.5px] border-dashed border-field" : pending ? "bg-kraft" : CELL[dayStatus.kind]
+                          day.foods === 0
+                            ? "border-[1.5px] border-dashed border-field"
+                            : pending
+                              ? "bg-kraft"
+                              : value === undefined
+                                ? CELL.unknown
+                                : CELL[status.kind]
                         }`}
                       />
                     );
@@ -236,6 +241,7 @@ export function WeekRibbons({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+        <span className="font-bold">Each row is colored by its average:</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-leaf align-[-2px]" />In range</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-lemon align-[-2px]" />Under</span>
         <span><span aria-hidden="true" className="mr-1 inline-block size-3 rounded-sm bg-carrot align-[-2px]" />Over</span>

@@ -25,7 +25,7 @@ test("up to three wins, the harder ones first", () => {
 test("a day over on calories gets one heads-up", () => {
   const { wins, headsUp } = dayHighlights({ calories: 2600, protein: 80 }, targets);
   assert.deepEqual(wins, ["Protein"]);
-  assert.equal(headsUp, "Heads up: calories high");
+  assert.equal(headsUp, "Calories ran high");
 });
 
 test("going over a minimum is a win, not a heads-up", () => {
