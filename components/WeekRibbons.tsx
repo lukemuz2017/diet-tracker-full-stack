@@ -281,16 +281,13 @@ function NutrientDetail({
 
   return (
     <div className="mb-2 flex flex-col gap-4 rounded-xl bg-celery/60 p-4">
-      {/* The name is on the row above, so the Stats button takes its place over the bar. */}
+      {/* The name and the check mark are on the row above; the bar keeps only words like "499 kcal to go". */}
       <NutrientBar
         nutrient={nutrientKey}
         target={targets[nutrientKey]}
         value={summary.counted > 0 ? summary.averages[nutrientKey] : undefined}
-        heading={
-          <Button variant="secondary" onClick={() => onOpenChart("trend")} aria-label={`${label} stats: trend, sources and week comparison`}>
-            Stats
-          </Button>
-        }
+        heading={null}
+        checkOnly
       />
       {/* Below the bar: the day table, with what the nutrient is and why it matters beside it
           (above the table on a narrow screen). */}
@@ -299,6 +296,15 @@ function NutrientDetail({
         <h4 className="text-xs font-bold uppercase tracking-[0.08em] text-leaf">Why it matters</h4>
         <p className="text-sm text-muted">{WHY[nutrientKey]}</p>
       </div>
+      {/* Bottom right, level with the Average row (after the table on a narrow screen). */}
+      <Button
+        variant="secondary"
+        onClick={() => onOpenChart("trend")}
+        aria-label={`Additional stats for ${label.toLowerCase()}: trend, sources and week comparison`}
+        className="h-8 min-h-0! px-3.5 text-[13px] max-lg:self-start lg:col-start-2 lg:row-start-1 lg:self-end lg:justify-self-end"
+      >
+        Additional Stats
+      </Button>
       <table className="w-full text-sm lg:col-start-1 lg:row-start-1">
         <caption className="sr-only">{label} each day and the food that gave the most. Grayed days aren’t marked complete, so they’re left out of the average.</caption>
         <thead>

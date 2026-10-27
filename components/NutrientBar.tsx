@@ -26,28 +26,39 @@ export function NutrientBar({
   value,
   detail,
   heading,
+  checkOnly = false,
 }: {
   nutrient: NutrientKey;
   target: Target;
   value: number | undefined;
   /** A second line, e.g. "In range on 4 of 5 days". */
   detail?: string;
-  /** Replaces the nutrient's name above the bar, e.g. when the name is already on the row above. */
-  heading?: ReactNode;
+  /** Replaces the nutrient's name above the bar; null leaves it out (the name is already on the row above). */
+  heading?: ReactNode | null;
+  /** Leave out the badge when it would only be a check mark. */
+  checkOnly?: boolean;
 }) {
   const { label, unit } = NUTRIENTS[nutrient];
   const status = statusFor(nutrient, target, value);
   const max = scaleMax(target);
+  // With checkOnly, a met target shows no badge (the check is on the row above); words like "499 kcal to go" stay.
+  const showChip = !(checkOnly && status.kind === "in-range");
   const upperOnly = target.kind === "max" || target.kind === "usual";
   const bandStart = upperOnly ? 0 : target.min!;
   const bandEnd = target.kind === "min" ? max : (target.max ?? 0);
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-3">
-        {heading ?? <span className="font-bold">{label}</span>}
-        <StatusChip status={status.kind}>{status.text}</StatusChip>
-      </div>
+      {(heading !== null || showChip) && (
+        <div className="flex items-center justify-between gap-3">
+          {heading === undefined ? <span className="font-bold">{label}</span> : heading}
+          {showChip && (
+            <span className="ml-auto">
+              <StatusChip status={status.kind}>{status.text}</StatusChip>
+            </span>
+          )}
+        </div>
+      )}
       <div aria-hidden="true" className="relative h-4 overflow-hidden rounded-full bg-track">
         <div
           className="absolute inset-y-0 bg-band"
