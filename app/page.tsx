@@ -49,7 +49,7 @@ export default function WelcomePage() {
         <div className="flex flex-col gap-2">
           <Eyebrow>Balanced eating, not dieting</Eyebrow>
           <h1 id="welcome-title" className="font-display text-4xl font-extrabold leading-[1.02] tracking-tight text-balance sm:text-[44px]">
-            Welcome to Diet Tracker
+            Welcome to Keep Level
           </h1>
           <p className="text-[17px] text-muted">
             See whether what you eat adds up to a balanced week, with ranges made for you. No calorie cutting.

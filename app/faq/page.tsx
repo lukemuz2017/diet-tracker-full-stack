@@ -13,7 +13,7 @@ const SECTIONS: { title: string; tone: string; questions: { q: string; a: ReactN
     tone: "border-leaf",
     questions: [
       {
-        q: "What is Diet Tracker for?",
+        q: "What is Keep Level for?",
         a: "Keeping a balanced diet over a week, not losing weight. Your ranges are set to maintain your current weight, and the app looks at how each nutrient averages out across the week, because single days vary with events and meals out.",
       },
       {
@@ -109,7 +109,7 @@ export default function FaqPage() {
     <>
       <PageHeader title="FAQ" />
       <p className="mb-5 max-w-2xl rounded-card border-l-[6px] border-leaf bg-leaf-tint p-4 font-display text-lg font-extrabold leading-snug sm:p-5 sm:text-xl">
-        Diet Tracker keeps your week balanced, not your weight lower. Log what you eat, mark the day complete, and see
+        Keep Level keeps your week balanced, not your weight lower. Log what you eat, mark the day complete, and see
         which nutrients are on track.
       </p>
       <div className="flex max-w-2xl flex-col gap-5">

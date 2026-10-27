@@ -26,7 +26,7 @@ async function signIn(page: Page, email: string) {
 async function openDashboard(page: Page) {
   await page.goto("/log");
   const addFood = page.getByRole("button", { name: /^Add food/ }).first();
-  const welcome = page.getByRole("heading", { name: "Welcome to Diet Tracker" });
+  const welcome = page.getByRole("heading", { name: "Welcome to Keep Level" });
   await expect(addFood.or(welcome)).toBeVisible();
   if (await addFood.isVisible()) return;
 

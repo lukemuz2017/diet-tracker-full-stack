@@ -1,4 +1,4 @@
-# Diet Tracker
+# Keep Level
 
 A diet tracker for keeping a **balanced diet** and maintaining your weight, not losing it. Enter a few details about yourself once, and it sets target ranges for calories, macros, fiber and key vitamins and minerals. Log what you eat, mark the day complete, and see how each nutrient averages out over your last 7 days, with suggestions in plain words.
 

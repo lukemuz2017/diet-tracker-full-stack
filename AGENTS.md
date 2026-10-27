@@ -20,7 +20,7 @@ A diet tracking and planning tool for keeping a **balanced diet**. It is not a w
 2. **Log food.** They log what they eat each day (or catch up on earlier days of the week) and mark the day complete.
 3. **Check the last 7 days.** Every nutrient is judged on its average over the complete days in the last 7. The Dashboard shows what's going well, what could improve (with a food-group suggestion) and a bigger-picture habit.
 
-Name: Diet Tracker. Repo folder: `health-tracker`.
+Name: Keep Level (renamed from Diet Tracker, 2026-10-27). Repo folder: `health-tracker`.
 
 ## Project files
 
@@ -204,4 +204,5 @@ Notes:
 - 2026-10-27 (student): the app should say "average" everywhere. (1) The Dashboard grid colors each nutrient's row by the **average's** status in every counted day's cell (green in range, yellow under, orange over); not-logged stays dashed and not-complete stays brown-bag kraft; per-day amounts are in each cell's tooltip and the detail table, without per-day status words; the legend says "Each row is colored by its average". (2) The Additional Stats pop-up opens Trend and Sources with an **average header** (the average, its target, how many complete days it rests on, and the status in words, `AverageHeader` in `components/NutrientCharts.tsx`; Compare weeks opens with its two averages); Trend's bars take the same average color (brown when incomplete), and the note says the shaded band is the target for the average, not for each day. (3) Daily wording is softer: the day panel's note reads "Calories ran high" instead of "Heads up: calories high", and the table's Status column is "Day vs. range". The day rings in the Dashboard header are still per-day.
 - 2026-10-27 (student): keep UI copy short; don't explain what a chart already shows. Pop-up legends and notes were cut to a few words, and the grid no longer has the "Pick a day or a nutrient" label.
 - 2026-10-27 (student): on History, an opened day shows its meals collapsed (name, food count, calories); each opens to its foods.
+- 2026-10-27 (student): the app is renamed **Keep Level** (it keeps nutrients level on average). Changed in the header, tab titles, welcome screen, FAQ, README and the e2e test. Left alone: the repo and folder name, the `diet-tracker:tray` storage key, the Assignment 3 process write-up (`docs/`), and the migration comment. The Clerk application name is set in the Clerk dashboard, not in code.
 - Next: `/security-review` (the student runs it), handle findings, merge to main, deploy on Vercel.

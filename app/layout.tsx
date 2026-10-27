@@ -21,7 +21,7 @@ const atkinson = Atkinson_Hyperlegible({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Diet Tracker", template: "%s · Diet Tracker" },
+  title: { default: "Keep Level", template: "%s · Keep Level" },
   description:
     "Track a balanced diet, not a diet. Personal ranges for calories, protein, fiber and key vitamins, judged over your last 7 days.",
 };
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 aria-hidden="true"
                 className="size-7 rounded-full bg-lemon shadow-[inset_0_0_0_3px_var(--color-lemon),inset_0_0_0_4.5px_var(--color-soil)]"
               />
-              <span className="font-display text-xl font-extrabold">Diet Tracker</span>
+              <span className="font-display text-xl font-extrabold">Keep Level</span>
             </Link>
             {/* Both read the URL, which the sign-in and sign-up routes only know per request. */}
             <Suspense>
