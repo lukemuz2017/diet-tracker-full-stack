@@ -8,14 +8,19 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isPublic = createRouteMatcher(["/", "/faq", "/sign-in(.*)", "/sign-up(.*)"]);
 const isApi = createRouteMatcher(["/api(.*)"]);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (isApi(request)) {
-    const { userId } = await auth();
-    if (!userId) return Response.json({ error: "Sign in first." }, { status: 401 });
-  } else if (!isPublic(request)) {
-    await auth.protect();
-  }
-});
+// The sign-in and sign-up addresses are stated here, in the code, so a signed-out
+// visitor lands on our own pages on any host, and never on Clerk's hosted ones.
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (isApi(request)) {
+      const { userId } = await auth();
+      if (!userId) return Response.json({ error: "Sign in first." }, { status: 401 });
+    } else if (!isPublic(request)) {
+      await auth.protect();
+    }
+  },
+  { signInUrl: "/sign-in", signUpUrl: "/sign-up" },
+);
 
 export const config = {
   matcher: [

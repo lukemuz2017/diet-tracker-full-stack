@@ -11,7 +11,7 @@ export default function SignInPage() {
   return (
     <div className="flex flex-col items-center gap-6 py-6 sm:py-10">
       <Suspense>
-        <SignIn fallbackRedirectUrl="/log" />
+        <SignIn path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/log" />
       </Suspense>
     </div>
   );

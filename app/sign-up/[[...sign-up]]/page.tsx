@@ -10,7 +10,7 @@ export default function SignUpPage() {
   return (
     <div className="flex flex-col items-center gap-6 py-6 sm:py-10">
       <Suspense>
-        <SignUp fallbackRedirectUrl="/setup" />
+        <SignUp path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/setup" />
       </Suspense>
     </div>
   );
