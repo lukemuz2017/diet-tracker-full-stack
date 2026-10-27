@@ -1,33 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { addDays } from "./dates.ts";
-import { compareWeeks, macroRange, macroShares, macroTakeaway, topSources } from "./insights.ts";
+import { compareWeeks, topSources } from "./insights.ts";
 import type { Profile } from "./profile.ts";
 import type { Entry, SavedData } from "./storage.ts";
 import { computeTargets } from "./targets.ts";
 
 const END = "2026-10-25";
 const man: Profile = { units: "metric", heightCm: 175, weightKg: 70, birthDate: "1996-01-01", sex: "male", activity: "moderate" };
-
-test("macro shares come from grams and 4-4-9 kcal per gram", () => {
-  // 100 g protein = 400 kcal, 250 g carbs = 1,000, 66.67 g fat = 600 → 20% / 50% / 30%.
-  const shares = macroShares({ protein: 100, carbs: 250, fat: 66.67 })!;
-  assert.equal(Math.round(shares.protein), 20);
-  assert.equal(Math.round(shares.carbs), 50);
-  assert.equal(Math.round(shares.fat), 30);
-  assert.equal(macroShares({}), null);
-});
-
-test("fat's range starts at 25% for ages 18 and under", () => {
-  assert.deepEqual(macroRange("fat", false), [20, 35]);
-  assert.deepEqual(macroRange("fat", true), [25, 35]);
-});
-
-test("the macro takeaway names what's outside its range, or what's near an edge", () => {
-  assert.equal(macroTakeaway({ protein: 22, carbs: 38, fat: 40 }, false), "Carbs are 7 points below their 45–65% range. Fat is also outside its range.");
-  assert.equal(macroTakeaway({ protein: 22, carbs: 46, fat: 32 }, false), "All three are in range. Carbs are close to the low end (46% against 45–65%).");
-  assert.equal(macroTakeaway({ protein: 20, carbs: 52, fat: 28 }, false), "All three are comfortably inside their ranges.");
-});
 
 const entry = (date: string, name: string, nutrients: Entry["nutrients"], id = `${date}-${name}`): Entry => ({
   id,

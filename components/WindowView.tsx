@@ -1,6 +1,6 @@
 "use client";
 
-import { MacroSplit, NutrientByDay } from "@/components/HistoryCharts";
+import { NutrientByDay } from "@/components/HistoryCharts";
 import { HistoryDays } from "@/components/HistoryDays";
 import { NutrientBar } from "@/components/NutrientBar";
 import { WeekCompare, WhereFrom } from "@/components/HistoryInsights";
@@ -11,7 +11,7 @@ import { formatDay } from "@/lib/dates";
 import { SCORED_KEYS, statusFor } from "@/lib/log";
 import { withUsual } from "@/lib/usual";
 import { NUTRIENT_GROUPS } from "@/lib/nutrients";
-import { profileAge, type Profile } from "@/lib/profile";
+import type { Profile } from "@/lib/profile";
 import type { SavedData } from "@/lib/storage";
 import { computeTargets } from "@/lib/targets";
 import { summarizeWindow, type DayState } from "@/lib/week";
@@ -124,7 +124,6 @@ export function WindowView({
           </Disclosure>
           <Disclosure title="Stats">
             {summary.logged > 0 && <NutrientByDay summary={summary} targets={targets} />}
-            {summary.counted > 0 && <MacroSplit averages={summary.averages} teen={profileAge(profile, today) <= 18} />}
             <WeekCompare data={data} targets={targets} end={end} />
             {summary.counted > 0 && <WhereFrom data={data} summary={summary} />}
           </Disclosure>

@@ -1,73 +1,12 @@
-// What History says about a week beyond the numbers: where the macros sit in
-// their ranges, which foods a nutrient came from, and how this week compares
-// with last week. Pure functions, checked by lib/insights.test.ts.
+// What the nutrient charts say beyond the numbers: which foods a nutrient
+// came from, and how this week compares with last week. Pure functions, checked by lib/insights.test.ts.
 
 import { addDays } from "./dates.ts";
 import { NUTRIENT_KEYS } from "./log.ts";
-import type { NutrientKey, Nutrients } from "./nutrients.ts";
+import type { NutrientKey } from "./nutrients.ts";
 import type { Entry, SavedData } from "./storage.ts";
 import type { Target, Targets } from "./targets.ts";
 import { WINDOW_DAYS, summarizeWindow } from "./week.ts";
-
-// ── Macros ───────────────────────────────────────────────────────────────
-
-export type MacroKey = "protein" | "carbs" | "fat";
-
-export const MACROS: { key: MacroKey; label: string; kcalPerGram: number }[] = [
-  { key: "protein", label: "Protein", kcalPerGram: 4 },
-  { key: "carbs", label: "Carbs", kcalPerGram: 4 },
-  { key: "fat", label: "Fat", kcalPerGram: 9 },
-];
-
-/** Healthy share of calories (AMDR), in percent. Fat starts at 25% for ages 18 and under. */
-export function macroRange(key: MacroKey, teen: boolean): [low: number, high: number] {
-  if (key === "protein") return [10, 35];
-  if (key === "carbs") return [45, 65];
-  return teen ? [25, 35] : [20, 35];
-}
-
-/** The share of calories from each macro, in percent, or null if nothing is known. */
-export function macroShares(averages: Nutrients): Record<MacroKey, number> | null {
-  const kcal = MACROS.map((macro) => (averages[macro.key] ?? 0) * macro.kcalPerGram);
-  const total = kcal.reduce((sum, value) => sum + value, 0);
-  if (total === 0) return null;
-  const [protein, carbs, fat] = kcal.map((value) => (value / total) * 100);
-  return { protein, carbs, fat };
-}
-
-/** How close to an edge still counts as "near" it, in percentage points. */
-const NEAR_EDGE = 3;
-
-const verb = (key: MacroKey) => (key === "carbs" ? "are" : "is");
-
-/** One plain sentence on where the macros stand. */
-export function macroTakeaway(shares: Record<MacroKey, number>, teen: boolean): string {
-  const rows = MACROS.map((macro) => {
-    const [low, high] = macroRange(macro.key, teen);
-    const share = Math.round(shares[macro.key]);
-    return { ...macro, low, high, share, below: low - share, above: share - high };
-  });
-  const out = rows
-    .filter((row) => row.below > 0 || row.above > 0)
-    .sort((a, b) => Math.max(b.below, b.above) - Math.max(a.below, a.above));
-  if (out.length > 0) {
-    const worst = out[0];
-    const points = Math.max(worst.below, worst.above);
-    const side = worst.below > 0 ? "below" : "above";
-    const rest = out.length > 1 ? ` ${out[1].label} ${verb(out[1].key)} also outside ${out[1].key === "carbs" ? "their" : "its"} range.` : "";
-    return `${worst.label} ${verb(worst.key)} ${points} ${points === 1 ? "point" : "points"} ${side} ${worst.key === "carbs" ? "their" : "its"} ${worst.low}–${worst.high}% range.${rest}`;
-  }
-  const near = rows
-    .map((row) => ({ row, edge: Math.min(row.share - row.low, row.high - row.share) }))
-    .filter(({ edge }) => edge <= NEAR_EDGE)
-    .sort((a, b) => a.edge - b.edge);
-  if (near.length > 0) {
-    const { row } = near[0];
-    const end = row.share - row.low <= row.high - row.share ? "low" : "high";
-    return `All three are in range. ${row.label} ${verb(row.key)} close to the ${end} end (${row.share}% against ${row.low}–${row.high}%).`;
-  }
-  return "All three are comfortably inside their ranges.";
-}
 
 // ── Where a nutrient came from ───────────────────────────────────────────
 
