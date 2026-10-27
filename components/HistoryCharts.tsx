@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { formatDay, formatShortDay } from "@/lib/dates";
 import { formatValue, statusFor } from "@/lib/log";
 import { NUTRIENTS, type NutrientKey } from "@/lib/nutrients";
@@ -86,6 +87,7 @@ function RunningLine({ running, top, width, height, unit }: { running: (number |
 /** One nutrient for each of the 7 days against its target (shaded band), with the running average over the bars. */
 export function NutrientByDay({ summary, targets, nutrient: key }: { summary: WindowSummary; targets: Targets; nutrient: NutrientKey }) {
   const [active, setActive] = useState<string | null>(null);
+  const [asTable, setAsTable] = useState(false);
   const target = targets[key];
   const { label, unit } = NUTRIENTS[key];
   const values = summary.days.map((day) => day.totals[key] ?? 0);
@@ -105,6 +107,9 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
         {target.upper !== undefined && ` (safe upper limit ${formatValue(target.upper)} ${unit})`}
       </p>
 
+      <ViewToggle asTable={asTable} onToggle={() => setAsTable(!asTable)} />
+
+      <div hidden={asTable} className="flex flex-col gap-4">
       <div className="relative h-52 pl-12" aria-hidden="true">
         {/* Band and its edge labels */}
         <div className="absolute inset-x-12 right-0 bg-band/60" style={{ bottom: y(band.from), height: `calc(${y(band.to)} - ${y(band.from)})` }} />
@@ -161,8 +166,10 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
         <span>Faded bars: not marked complete</span>
       </p>
 
-      <details>
-        <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-leaf">Show as a table</summary>
+      </div>
+
+      {asTable && (
+      <div>
         {/* Wide enough that days and numbers never wrap; scrolls sideways on a narrow phone. */}
         <div className="overflow-x-auto">
         <table className="w-full min-w-[34rem] text-[15px]">
@@ -198,7 +205,8 @@ export function NutrientByDay({ summary, targets, nutrient: key }: { summary: Wi
           </tbody>
         </table>
         </div>
-      </details>
+      </div>
+      )}
     </div>
   );
 }

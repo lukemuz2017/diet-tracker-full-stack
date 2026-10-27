@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { bandFor, useSize } from "@/components/HistoryCharts";
+import { ViewToggle } from "@/components/ui/ViewToggle";
 import { ChangeCell } from "@/components/HistoryInsights";
 import { addDays, formatDay, formatShortDay } from "@/lib/dates";
 import { COMPARE_MIN_DAYS, compareWeeks } from "@/lib/insights";
@@ -42,6 +44,7 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
 
   const values = [...current.days, ...previous.days].flatMap((day) => (day.totals[key] === undefined ? [] : [day.totals[key]!]));
   const band = bandFor(target, values);
+  const [asTable, setAsTable] = useState(false);
   const [plotRef, plot] = useSize<HTMLDivElement>();
   const y = (value: number) => `${(value / band.top) * 100}%`;
   const weeks = [
@@ -89,6 +92,9 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
         </p>
       </div>
 
+      <ViewToggle asTable={asTable} onToggle={() => setAsTable(!asTable)} />
+
+      <div hidden={asTable} className="flex flex-col gap-4">
       <div className="relative h-52 pl-12" aria-hidden="true">
         <div className="absolute inset-x-12 right-0 bg-band/60" style={{ bottom: y(band.from), height: `calc(${y(band.to)} - ${y(band.from)})` }} />
         {band.edges.map((value) => (
@@ -144,8 +150,10 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
         <span>Hollow dot: not marked complete</span>
       </p>
 
-      <details>
-        <summary className="min-h-11 cursor-pointer content-center text-sm font-bold text-leaf">Show as a table</summary>
+      </div>
+
+      {asTable && (
+      <div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[26rem] text-[15px]">
             <caption className="sr-only">
@@ -182,7 +190,8 @@ export function NutrientCompare({ data, targets, end, nutrient: key }: { data: S
             </tbody>
           </table>
         </div>
-      </details>
+      </div>
+      )}
     </div>
   );
 }
