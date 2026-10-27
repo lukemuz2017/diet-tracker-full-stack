@@ -281,23 +281,15 @@ function NutrientDetail({
 
   return (
     <div className="mb-2 flex flex-col gap-4 rounded-xl bg-celery/60 p-4">
-      {/* The name is on the row above, so the chart buttons take its place over the bar. */}
+      {/* The name is on the row above, so the Stats button takes its place over the bar. */}
       <NutrientBar
         nutrient={nutrientKey}
         target={targets[nutrientKey]}
         value={summary.counted > 0 ? summary.averages[nutrientKey] : undefined}
         heading={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => onOpenChart("trend")} aria-label={`See the ${label.toLowerCase()} trend`}>
-              Trend
-            </Button>
-            <Button variant="secondary" onClick={() => onOpenChart("sources")} aria-label={`See where your ${label.toLowerCase()} came from`}>
-              Sources
-            </Button>
-            <Button variant="secondary" onClick={() => onOpenChart("compare")} aria-label={`Compare this week's ${label.toLowerCase()} with last week's`}>
-              Compare weeks
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={() => onOpenChart("trend")} aria-label={`${label} stats: trend, sources and week comparison`}>
+            Stats
+          </Button>
         }
       />
       {/* Below the bar: the day table, with what the nutrient is and why it matters beside it
